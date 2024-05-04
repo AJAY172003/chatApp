@@ -40,7 +40,7 @@ const [receiverId,setReceiverId]=useState("");
 useEffect(()=>{
   const { data ,userId} = route.params;
   setReceiverId(data)
-  setUserId(userId)
+  setUserId(userId) 
   console.log( "this is receiver id",receiverId)
 },[])
   const [messageText, setMessageText] = useState('');

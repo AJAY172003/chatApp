@@ -1,6 +1,7 @@
 import ChatScreen from "./ChatScreen";
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import GoogleSigninScreen from './GoogleSigninScreen'
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import Start from "./Start";
 
@@ -10,6 +11,7 @@ function App(){
     <NavigationContainer>
     <Stack.Navigator
     >
+      <Stack.Screen name="signin" component={GoogleSigninScreen}  options={{ headerShown: false }}/>
        <Stack.Screen name="start" component={Start}  options={{ headerShown: false }}/>
                 <Stack.Screen 
       options={{ headerShown: false ,headerStyle:{
