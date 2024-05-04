@@ -163,3 +163,4 @@ alignItems:'center',borderRadius:50,flexDirection:'row'}}>
 }
 
 export default ChatScreen;
+
