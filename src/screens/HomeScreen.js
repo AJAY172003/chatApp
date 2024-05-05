@@ -1,12 +1,77 @@
-import { useReducer, useState } from "react";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from 'react-redux';
 import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { setCountryFilter, setLanguageFilter, setPreferences, setSearchKey, setUser } from "../redux/DataSlice";
+import { routes } from "../constants/routes";
+import { SelectList } from 'react-native-dropdown-select-list'
+import { getData } from "../utils/storage";
 
-export const HomeScreen = () => {
+const genderData = [
+    { key: '1', value: 'Female' },
+    { key: '2', value: 'Male' },
+    { key: '3', value: 'Others' },
+]
+export const HomeScreen = ({ navigation }) => {
     const [numOnlineUsers, setNumOnlineUsers] = useState(2000);
     const [country, setCountry] = useState('');
     const [language, setLanguage] = useState('');
     const [gender, setGender] = useState('');
     const [userGender, setUserGender] = useState('');
+
+    const dispatch = useDispatch();
+    const { CountryFilter, LanguageFilter, SearchKey } = useSelector((state) => state.data);
+
+    useEffect(() => {
+        getData('preferences').then((data) => {
+            console.log("preferences data: ", data)
+            if (data != null) {
+                setCountry(data.Country);
+                setLanguage(data.Language);
+                setGender(data.Gender);
+                setDefaultGenderOption(genderData.find((item) => item.value == data.Gender));
+                dispatch(setPreferences(data));
+            }
+        }
+        );
+        getData('user').then((data) => {
+            console.log("user data: ", data)
+            if (data != null) {
+                setUserGender(data.Gender);
+                setDefaultUserGenderOption(genderData.find((item) => item.value == data.Gender));
+                dispatch(setUser(data));
+            }
+        }
+        );
+    }, []);
+
+    useEffect(() => {
+        if (SearchKey == 'country' && CountryFilter !== null) {
+            setCountry(CountryFilter);
+            dispatch(setCountryFilter(null));
+        }
+        else if (SearchKey == 'language' && LanguageFilter !== null) {
+            setLanguage(LanguageFilter);
+            dispatch(setLanguageFilter(null));
+        }
+    }, [CountryFilter, LanguageFilter]);
+
+    useEffect(() => {
+        const preferences = {
+            Country: country,
+            Language: language,
+            Gender: gender
+        };
+        dispatch(setPreferences(preferences));
+    }, [country, language, gender])
+
+    useEffect(() => {
+        if (userGender != null && userGender.length != 0) {
+            const user = {
+                Gender: userGender
+            };
+            dispatch(setUser(user));
+        }
+    }, [userGender]);
 
     return (
         <View
@@ -52,7 +117,7 @@ export const HomeScreen = () => {
             <Text
                 style={{
                     color: 'white',
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: 'bold',
                 }}>
                 {`${numOnlineUsers}+\nPEOPLE ARE ONLINE`}
@@ -66,14 +131,14 @@ export const HomeScreen = () => {
                         paddingHorizontal: 10,
                         paddingVertical: 20,
                         backgroundColor: '#202020',
-                        marginTop: 20,
+                        marginTop: 40,
                         borderRadius: 20,
                     }}
                 >
                     <Text
                         style={{
                             color: 'white',
-                            fontSize: 24,
+                            fontSize: 20,
                             fontWeight: 'bold',
                             marginTop: 10
                         }}
@@ -90,15 +155,22 @@ export const HomeScreen = () => {
                     <View style={{
                         paddingBottom: 20,
                     }}>
-                        <TouchableOpacity>
-                            <TextInput 
+                        <TouchableOpacity
+                            onPress={() => {
+                                dispatch(setSearchKey('country'))
+                                navigation.navigate(routes.SEARCHLIST, {
+                                    title: 'Select Country'
+                                })
+                            }}
+                        >
+                            <TextInput
                                 placeholder="Select Country"
                                 placeholderTextColor={'grey'}
                                 value={country}
                                 editable={false}
                                 style={{
                                     color: 'black',
-                                    fontSize: 18,
+                                    fontSize: 16,
                                     marginTop: 20,
                                     backgroundColor: 'white',
                                     borderRadius: 20,
@@ -106,15 +178,22 @@ export const HomeScreen = () => {
                                 }}
                             />
                         </TouchableOpacity>
-                        <TouchableOpacity>
-                            <TextInput 
+                        <TouchableOpacity
+                            onPress={() => {
+                                dispatch(setSearchKey('language'))
+                                navigation.navigate(routes.SEARCHLIST, {
+                                    title: 'Select Language'
+                                })
+                            }}
+                        >
+                            <TextInput
                                 placeholder="Select Language"
                                 placeholderTextColor={'grey'}
                                 value={language}
                                 editable={false}
                                 style={{
                                     color: 'black',
-                                    fontSize: 18,
+                                    fontSize: 16,
                                     marginTop: 20,
                                     backgroundColor: 'white',
                                     borderRadius: 20,
@@ -122,23 +201,23 @@ export const HomeScreen = () => {
                                 }}
                             />
                         </TouchableOpacity>
-                        <TouchableOpacity>
-                            <TextInput 
-                                placeholder="Select Gender"
-                                placeholderTextColor={'grey'}
-                                value={gender}
-                                editable={false}
-                                style={{
-                                    color: 'black',
-                                    fontSize: 18,
-                                    marginTop: 20,
-                                    backgroundColor: 'white',
-                                    borderRadius: 20,
-                                    paddingHorizontal: 10
-                                }}
-                            />
-                        </TouchableOpacity>
-
+                        <SelectList
+                            setSelected={setGender}
+                            data={genderData}
+                            save="value"
+                            search={false}
+                            boxStyles={{
+                                backgroundColor: 'white',
+                                borderRadius: 20,
+                                marginTop: 20,
+                                paddingHorizontal: 10,
+                            }}
+                            inputStyles={{
+                                color: 'black',
+                                fontSize: 16,
+                            }}
+                            placeholder={gender.length ? gender : "Select Gender"}
+                        />
                         <Text
                             style={{
                                 color: 'white',
@@ -147,38 +226,39 @@ export const HomeScreen = () => {
                         >
                             You must select your gender below before starting a chat
                             <Text
-                            style={{color: 'red'}}> *</Text>
+                                style={{ color: 'red' }}> *</Text>
                         </Text>
-                        <TouchableOpacity>
-                            <TextInput 
-                                placeholder="Select Your Gender"
-                                placeholderTextColor={'grey'}
-                                value={userGender}
-                                editable={false}
-                                style={{
-                                    color: 'black',
-                                    fontSize: 18,
-                                    marginTop: 20,
-                                    backgroundColor: 'white',
-                                    borderRadius: 20,
-                                    paddingHorizontal: 10
-                                }}
-                            />
-                        </TouchableOpacity>
+                        <SelectList
+                            setSelected={setUserGender}
+                            data={genderData}
+                            save="value"
+                            search={false}
+                            boxStyles={{
+                                backgroundColor: 'white',
+                                borderRadius: 20,
+                                marginTop: 20,
+                                paddingHorizontal: 10,
+                            }}
+                            inputStyles={{
+                                color: 'black',
+                                fontSize: 16,
+                            }}
+                            placeholder={userGender.length ? userGender : "Select Your Gender"}
+                        />
                     </View>
                 </View>
             </ScrollView>
             <TouchableOpacity
-                disabled={userGender.length == 0}
+                disabled={userGender == null || userGender.length == 0}
             >
                 <Text
                     style={{
                         color: 'white',
-                        fontSize: 20,
+                        fontSize: 18,
                         fontWeight: 'bold',
                         textAlign: 'center',
                         padding: 10,
-                        backgroundColor: userGender.length != 0 ? '#0066b2' : 'grey',
+                        backgroundColor: (userGender != null && userGender.length != 0) ? '#0066b2' : 'grey',
                         borderRadius: 10,
                         marginHorizontal: 20,
                         marginVertical: 10,
