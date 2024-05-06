@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { setCountryFilter, setLanguageFilter, setPreferences, setSearchKey, setUser } from "../redux/DataSlice";
+import { setChatData, setCountryFilter, setCurrentChatTab, setLanguageFilter, setPreferences, setSearchKey, setUser } from "../redux/DataSlice";
 import { routes } from "../constants/routes";
 import { SelectList } from 'react-native-dropdown-select-list'
 import { getData } from "../utils/storage";
+import uuid from 'react-native-uuid';
 
 const genderData = [
     { key: '1', value: 'Female' },
@@ -23,21 +24,17 @@ export const HomeScreen = ({ navigation }) => {
 
     useEffect(() => {
         getData('preferences').then((data) => {
-            console.log("preferences data: ", data)
             if (data != null) {
                 setCountry(data.Country);
                 setLanguage(data.Language);
                 setGender(data.Gender);
-                setDefaultGenderOption(genderData.find((item) => item.value == data.Gender));
                 dispatch(setPreferences(data));
             }
         }
         );
         getData('user').then((data) => {
-            console.log("user data: ", data)
             if (data != null) {
                 setUserGender(data.Gender);
-                setDefaultUserGenderOption(genderData.find((item) => item.value == data.Gender));
                 dispatch(setUser(data));
             }
         }
@@ -250,6 +247,18 @@ export const HomeScreen = ({ navigation }) => {
             </ScrollView>
             <TouchableOpacity
                 disabled={userGender == null || userGender.length == 0}
+                onPress={() => {
+                    dispatch(setCurrentChatTab(1));
+                    dispatch(setChatData({
+                        1: {
+                            receiverId: null,
+                            messages: []
+                        }
+                    }));
+                    navigation.navigate(routes.CHATMANAGER, {
+                        userId: uuid.v4(),
+                    });
+                }}
             >
                 <Text
                     style={{

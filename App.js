@@ -7,6 +7,7 @@ import { routes } from "./src/constants/routes";
 import { SearchList } from "./src/screens/SearchList";
 import store from "./src/redux/store";
 import {Provider} from 'react-redux';
+import { ChatManager } from "./src/screens/ChatManager";
 
 const Stack = createNativeStackNavigator();
 function App() {
@@ -22,6 +23,8 @@ function App() {
         >
           <Stack.Screen
             name={routes.HOMESCREEN} component={HomeScreen} />
+            <Stack.Screen
+            name={routes.CHATMANAGER} component={ChatManager} />
           <Stack.Screen
             name={routes.CHATSCREEN} component={ChatScreen} />
           <Stack.Screen

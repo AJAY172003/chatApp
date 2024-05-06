@@ -16,7 +16,9 @@ const initialState = {
     },
     User: {
         Gender: ''
-    }
+    },
+    ChatData: {},
+    CurrentChatTab: null
 };
 
 const DataSlice = createSlice({
@@ -51,6 +53,12 @@ const DataSlice = createSlice({
         setUser(state, { payload }) {
             state.User = {...state.User, ...payload};
             storeData('user', state.User);
+        },
+        setChatData(state, { payload }) {
+            state.ChatData = payload;
+        },
+        setCurrentChatTab(state, { payload }) {
+            state.CurrentChatTab = payload;
         }
     },
 });
@@ -64,7 +72,9 @@ export const {
     setLanguageFilter,
     setUserGender,
     setPreferences,
-    setUser
+    setUser,
+    setChatData,
+    setCurrentChatTab
 } = DataSlice.actions;
 
 export default DataSlice.reducer;
