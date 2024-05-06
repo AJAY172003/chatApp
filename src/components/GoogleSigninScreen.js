@@ -1,5 +1,12 @@
-import {Button, View, ActivityIndicator, Text} from 'react-native';
+import {
+  Button,
+  View,
+  ActivityIndicator,
+  Text,
+  TouchableOpacity,
+} from 'react-native';
 import {useEffect, useState} from 'react';
+import Google from '../assets/images/google.svg';
 import {
   GoogleSignin,
   statusCodes,
@@ -86,23 +93,32 @@ function GoogleSigninScreen() {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        height: '100%',
-        backgroundColor: 'black',
+        width: '100%',
+        borderRadius: 20,
       }}>
-        <View style={{display:'flex',justifyContent:'space-around',height:'50%'}}>
-        {/* <Text style={{fontWeight:'900',color:'white'}}>PREMIUM BENEFITS!</Text>
-        <Text style={{color:'white'}}>Get acces to catogry matching</Text>
-        <Text style={{color:'white'}}>Get acces to MultiChat Windows</Text> */}
-      <GoogleSigninButton
-        style={{width: 192, height: 48}}
-        size={GoogleSigninButton.Size.Wide}
-        color={GoogleSigninButton.Color.Dark}
-        onPress={signIn}
-      />
-      <View>
-        <Button title="sign out" onPress={signOut}></Button>
-      </View>
-    </View>
+      <Text style={{fontWeight: 'bold', fontSize: 13, color: 'white'}}>
+        Login or sign up to restore your subscription
+      </Text>
+      <TouchableOpacity style={{width: '85%'}} onPress={signIn}>
+        <View
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: '#051EFF',
+            height: 40,
+            borderRadius: 10,
+            marginTop: 10,
+          }}>
+          <Google width={20} height={20} />
+          <Text style={{marginLeft: 10, color: 'white',fontWeight:900}}>
+          Login/SignUp
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      {/* <Button title="sign out" onPress={signOut}></Button> */}
     </View>
   );
 }
