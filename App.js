@@ -3,6 +3,8 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { HomeScreen } from "./src/screens/HomeScreen";
+import googlesignin from './src/components/GoogleSigninScreen';
+
 import { routes } from "./src/constants/routes";
 import { SearchList } from "./src/screens/SearchList";
 import store from "./src/redux/store";
@@ -12,6 +14,7 @@ import { ChatManager } from "./src/screens/ChatManager";
 const Stack = createNativeStackNavigator();
 function App() {
   return (
+
     <Provider store={store}>
       <NavigationContainer>
         <Stack.Navigator
