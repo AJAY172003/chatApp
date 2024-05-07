@@ -1,4 +1,9 @@
 {
   "name": "randomChat",
-  "displayName": "randomChat"
+  "displayName": "randomChat",
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-5213405198446794~6160485524"
+  }
+
+
 }

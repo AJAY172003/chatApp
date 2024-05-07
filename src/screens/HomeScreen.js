@@ -39,10 +39,12 @@ export const HomeScreen = ({navigation}) => {
         </TouchableOpacity>
       </View>
       <Image
+      
         source={require('../assets/images/chat_with_strangers.png')}
         style={{
           width: '100%',
           height: '10%',
+          resizeMode: 'cover',
           alignSelf: 'center',
         }}
       />

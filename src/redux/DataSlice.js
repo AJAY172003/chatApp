@@ -14,6 +14,7 @@ const initialState = {
     isPremium: false,
     isLoggedIn: false,
     isUserInfoFilled: false,
+    Email: '',
     premiumSettings:{
         autoReconnect: false,
         autoMessage:""

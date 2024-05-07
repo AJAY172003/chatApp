@@ -11,6 +11,7 @@ import store from "./src/redux/store";
 import {Provider, useDispatch} from 'react-redux';
 import { WelcomeScreen } from "./src/screens/WelcomeScreen";
 
+
 const Stack = createNativeStackNavigator();
 function App() {
   
@@ -25,6 +26,7 @@ function App() {
             }
           }}
         >
+        
           <Stack.Screen
             name={routes.WELCOMESCREEN} component={WelcomeScreen} />
           <Stack.Screen

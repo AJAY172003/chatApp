@@ -83,7 +83,7 @@ function FirstScreen({navigation}) {
             Tell us about yourself
           </Text>
         </View>
-
+  
         <View
           style={{
             paddingHorizontal: 10,
@@ -94,7 +94,7 @@ function FirstScreen({navigation}) {
           <Text style={{color: 'white', fontWeight: 500}}>
             Join a chat room and talk with strangers about certain things
           </Text>
-
+        
           <TextInput
             onChangeText={setValue}
             value={value}
@@ -107,13 +107,16 @@ function FirstScreen({navigation}) {
             }}
             placeholder="Name"
             placeholderTextColor={'white'}
-          />
+          /> 
 
           <SelectList
             setSelected={setGender}
             data={genderData}
             save="value"
             search={false}
+            dropdownStyles={{backgroundColor:'#212B7F',borderWidth:0}}
+            dropdownTextStyles={{color:'white'}}
+            
             boxStyles={{
               backgroundColor: '#051EFF',
               borderRadius: 0,
@@ -123,6 +126,7 @@ function FirstScreen({navigation}) {
             }}
             inputStyles={{
               fontWeight: 700,
+
               color: 'white',
               fontSize: 16,
             }}

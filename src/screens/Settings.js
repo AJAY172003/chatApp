@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import GoogleSigninScreen from '../components/GoogleSigninScreen';
 import {
   View,
@@ -30,14 +30,20 @@ function Settings({navigation}) {
   const {CountryFilter, LanguageFilter, SearchKey, User} = useSelector(
     state => state.data,
   );
+  const scrollViewRef = useRef();
+  const scrollToTop = () => {
+    ToastAndroid.show('Login first to buy Premium ', ToastAndroid.SHORT);
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ y: 0, animated: true });
+    }
+  };
 
   const [country, setCountry] = useState('');
   const [language, setLanguage] = useState('');
   const [gender, setGender] = useState('');
-  const [left, setLeft] = useState(!User.PremiumSettings.autoReconnect);
+  const [left, setLeft] = useState(!User.premiumSettings.autoReconnect);
   const [slideAnim, setSlideAnim] = useState(new Animated.Value(0));
   const [isOn, setIsOn] = useState(false);
-  const [isPremium, setIsPremium] = useState(false);
   const [message, setMessage] = useState('');
   const [value, setValue] = useState('');
   const[editable,setEditable]=useState(true)
@@ -49,8 +55,8 @@ function Settings({navigation}) {
     setCountry(User.Country);
     setLanguage(User.Language);
     setGender(User.Gender);
-    setIsOn(User.PremiumSettings.autoReconnect);
-    setMessage(User.PremiumSettings.autoMessage);
+    setIsOn(User.premiumSettings.autoReconnect);
+    setMessage(User.premiumSettings.autoMessage);
   }, []);
 
   useEffect(() => {
@@ -69,7 +75,7 @@ function Settings({navigation}) {
       Name: value,
       Language: language,
       Gender: gender,
-      PremiumSettings: {
+      premiumSettings: {
         autoReconnect: isOn,
         autoMessage: message,
       },
@@ -112,7 +118,7 @@ function Settings({navigation}) {
   }
 
   return (
-    <ScrollView style={{height: '100%', backgroundColor: '#211F1F'}}>
+    <ScrollView  ref={scrollViewRef} style={{height: '100%', backgroundColor: '#211F1F'}}>
       <View
         style={{
           display: 'flex',
@@ -163,7 +169,10 @@ function Settings({navigation}) {
             setSelected={setGender}
             data={genderData}
             save="value"
+            dropdownStyles={{backgroundColor:'#212B7F',borderWidth:0}}
+            dropdownTextStyles={{color:'white'}}
             search={false}
+            maxHeight={120}
             boxStyles={{
               backgroundColor: '#051EFF',
               borderRadius: 0,
@@ -175,6 +184,8 @@ function Settings({navigation}) {
               fontWeight: 700,
               color: 'white',
               fontSize: 16,
+              margin:0,
+             
             }}
             placeholder={gender.length ? gender : 'Select Gender'}
           />
@@ -276,6 +287,9 @@ function Settings({navigation}) {
               </TouchableOpacity>
             </View>
           </View>
+        {  
+          User.isPremium?  <></>:
+        <TouchableOpacity color='white' onPress={scrollToTop}>
           <View
             style={{
               backgroundColor: '#051EFF',
@@ -291,7 +305,11 @@ function Settings({navigation}) {
               <Text style={{color: 'white', fontSize: 15}}>$20/Month</Text>
             </View>
           </View>
+          </TouchableOpacity>
+        
+        }
         </View>
+        
       </View>
     </ScrollView>
   );

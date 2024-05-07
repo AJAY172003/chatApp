@@ -6,6 +6,7 @@ export const routes = {
     APP: 'App',
     SETTINGS: 'Settings',
     FIRSTSCREEN: 'FirstScreen',
+    ADSCREEN: 'AdScreen',
     SEARCHLIST: 'SearchList'
 
 };
