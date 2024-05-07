@@ -20,6 +20,8 @@ const initialState = {
         autoMessage:""
     }
   },
+  ChatData: {},
+  CurrentChatTab: null
 };
 
 const DataSlice = createSlice({
@@ -48,6 +50,12 @@ const DataSlice = createSlice({
       state.User = {...state.User, ...payload};
       storeData('user', state.User);
     },
+    setChatData(state, { payload }) {
+      state.ChatData = payload;
+  },
+  setCurrentChatTab(state, { payload }) {
+      state.CurrentChatTab = payload;
+  }
   },
 });
 
@@ -59,6 +67,8 @@ export const {
   setGenderFilter,
   setLanguageFilter,
   setUser,
+  setChatData,
+  setCurrentChatTab
 } = DataSlice.actions;
 
 export default DataSlice.reducer;
