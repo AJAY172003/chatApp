@@ -20,6 +20,7 @@ import {
 } from '../redux/DataSlice';
 import {routes} from '../constants/routes';
 import {SelectList} from 'react-native-dropdown-select-list';
+
 const genderData = [
   {key: '1', value: 'Female'},
   {key: '2', value: 'Male'},
@@ -34,10 +35,9 @@ function Settings({navigation}) {
   const [country, setCountry] = useState('');
   const [language, setLanguage] = useState('');
   const [gender, setGender] = useState('');
-  const [left, setLeft] = useState(!User.PremiumSettings.autoReconnect);
+  const [left, setLeft] = useState(!User.premiumSettings.autoReconnect);
   const [slideAnim, setSlideAnim] = useState(new Animated.Value(0));
   const [isOn, setIsOn] = useState(false);
-  const [isPremium, setIsPremium] = useState(false);
   const [message, setMessage] = useState('');
   const [value, setValue] = useState('');
   const[editable,setEditable]=useState(true)
@@ -49,8 +49,8 @@ function Settings({navigation}) {
     setCountry(User.Country);
     setLanguage(User.Language);
     setGender(User.Gender);
-    setIsOn(User.PremiumSettings.autoReconnect);
-    setMessage(User.PremiumSettings.autoMessage);
+    setIsOn(User.premiumSettings.autoReconnect);
+    setMessage(User.premiumSettings.autoMessage);
   }, []);
 
   useEffect(() => {
@@ -69,7 +69,7 @@ function Settings({navigation}) {
       Name: value,
       Language: language,
       Gender: gender,
-      PremiumSettings: {
+      premiumSettings: {
         autoReconnect: isOn,
         autoMessage: message,
       },

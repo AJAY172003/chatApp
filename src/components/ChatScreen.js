@@ -9,24 +9,47 @@ import {
   Text,
   View,
 } from 'react-native';
-import { setChatData } from '../redux/DataSlice';
+import { setChatData, setLastFIOffset } from '../redux/DataSlice';
+
+const FEMALE = "Female";
 
 function ChatScreen({ route, navigation, chatTab, supabase, userId }) {
 
+  console.log("chatTab", chatTab);
   const [messages, setMessages] = useState([]);
   const [receiverId, setReceiverId] = useState(null);
   const [messageText, setMessageText] = useState('');
   const [isRequesting, setIsRequesting] = useState(false);
 
-  const { ChatData, CurrentChatTab } = useSelector(state => state.data);
+  const { ChatData, CurrentChatTab, User, LastFIOffset } = useSelector(state => state.data);
+  const chatDataRef = useRef(null);
   const dispatch = useDispatch();
 
   const handleChatRequest = async () => {
     try {
-      const response = await axios.post('https://chatserver-arnv.onrender.com/user', { userId: userId });
+      const response = await axios.post('https://chatserver-arnv.onrender.com/user', { 
+        userId: userId,
+        language: User.language,
+        country: User.country,
+        gender: User.gender,
+        email: User.email,
+        isFIRequired: LastFIOffset >= 3,
+        requiredFilters: {}
+      });
+      
+      if(response.data.user.gender === FEMALE){
+        dispatch(setLastFIOffset(0));
+      }
+      else {
+        dispatch(setLastFIOffset(LastFIOffset + 1));
+      }
+
+      const latestChatData = chatDataRef.current;
       const matchedReceiverId = response.data.user.userId;
-      const chatData = { ...ChatData };
+      console.log("chatData", latestChatData);
+      const chatData = { ...latestChatData };
       chatData[chatTab] = { receiverId: matchedReceiverId, messages: [] };
+      console.log("chatData", chatData);
       dispatch(setChatData(chatData));
       setReceiverId(matchedReceiverId);
     } catch (error) {
@@ -37,6 +60,7 @@ function ChatScreen({ route, navigation, chatTab, supabase, userId }) {
   }
 
   useEffect(() => {
+    chatDataRef.current = ChatData;
     if (chatTab) {
       setMessages(ChatData[chatTab]?.messages);
       setReceiverId(ChatData[chatTab]?.receiverId);
@@ -52,12 +76,13 @@ function ChatScreen({ route, navigation, chatTab, supabase, userId }) {
     const randomId = uuid.v4();
     if (!messageText.trim()) return;
     try {
+      const latestChatData = chatDataRef.current;
       const { error } = await supabase
         .from('messages')
         .insert([{ sender_id: userId, receiver_id: receiverId, message: messageText, messageId: randomId }]);
       if (error) throw error;
       setMessages(prevMessages => [...prevMessages, { text: messageText, belongs_to: true, messageId: randomId }]);
-      dispatch(setChatData({ ...ChatData, [chatTab]: { ...ChatData[chatTab], messages: [...ChatData[chatTab].messages, { text: messageText, belongs_to: true, messageId: randomId }] } }));
+      dispatch(setChatData({ ...latestChatData, [chatTab]: { ...latestChatData[chatTab], messages: [...latestChatData[chatTab].messages, { text: messageText, belongs_to: true, messageId: randomId }] } }));
       setMessageText('');
     } catch (error) {
       console.error('Error sending message:', error.message);
@@ -142,7 +167,7 @@ function ChatScreen({ route, navigation, chatTab, supabase, userId }) {
 
             <FlatList
               ref={flatListRef}
-              initialNumToRender={messages.length}
+              initialNumToRender={messages.length || 1}
               style={{ backgroundColor: 'black' }}
               data={messages}
               renderItem={({ item, index }) => (

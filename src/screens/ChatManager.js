@@ -1,25 +1,31 @@
-import { Image, ScrollView, Text, ToastAndroid, TouchableOpacity, View } from 'react-native';
+import { BackHandler, Image, ScrollView, Text, ToastAndroid, TouchableOpacity, View } from 'react-native';
 import uuid from 'react-native-uuid';
 import { useDispatch, useSelector } from 'react-redux';
 import { setChatData, setCurrentChatTab } from '../redux/DataSlice';
 import { createClient } from '@supabase/supabase-js'
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ChatScreen from '../components/ChatScreen';
+import { ConfirmationPopup } from '../components/ConfirmationPopup';
+import axios from 'axios';
 
 const MAX_CHAT_TAB_LIMIT = 5;
 
 const supabase = createClient("https://ninflipyamhqwcrfymmu.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pbmZsaXB5YW1ocXdjcmZ5bW11Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQ1NTcwOTYsImV4cCI6MjAzMDEzMzA5Nn0.FBRmz0HOlsMUkMXzQiZTXxyLruKqygXjw17g0QuHhPU")
 
 export const ChatManager = ({ navigation, route }) => {
+
+    const [confirmationPopupVisible, setConfirmationPopupVisible] = useState(false);
+    const [confirmationPopupLoading, setConfirmationPopupLoading] = useState(false);
+
     const { userId = uuid.v4() } = route.params;
     const dispatch = useDispatch();
     const chatDataRef = useRef(null);
-    const { Preferences, User, ChatData, CurrentChatTab } = useSelector(state => state.data);
+    const { ChatData, CurrentChatTab } = useSelector(state => state.data);
 
     useEffect(() => {
         chatDataRef.current = ChatData;
     }, [ChatData]);
-    
+
     // Create a function to handle inserts
     const handleInserts = (payload) => {
         const latestChatData = chatDataRef.current;
@@ -60,8 +66,24 @@ export const ChatManager = ({ navigation, route }) => {
             // set receivedId to null and messages to empty array
             tempChatData[chatTabKey] = { receiverId: null, messages: [] };
             dispatch(setChatData(tempChatData));
-            console.log("chat tab is deleted with user1: ", user1, " and user2: ", user2);
+            console.log("chat is deleted with user1: ", user1, " and user2: ", user2);
         }
+    }
+
+    const handleBack = async () => {
+        setConfirmationPopupLoading(true);
+        const response = await axios.post('https://chatserver-arnv.onrender.com/removeUsers', {
+            userId: userId,
+            connectedUserIds: Object.keys(ChatData).map(key => ChatData[key].receiverId)
+        });
+
+        if(response.status !== 200) {
+            ToastAndroid.show("Error disconnecting chats", ToastAndroid.SHORT);
+        }
+
+        setConfirmationPopupLoading(true)
+        setConfirmationPopupVisible(false);
+        navigation.goBack();
     }
 
     useEffect(() => {
@@ -79,11 +101,19 @@ export const ChatManager = ({ navigation, route }) => {
                 .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat' }, handleDeletes)
                 .subscribe();
         }
+
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+            setConfirmationPopupVisible(true);
+            return true;
+        });
+
+
         return () => {
             console.log("supabase removed")
             if (userId !== null) {
                 supabase.removeAllChannels();
             }
+            backHandler.remove();
         }
     }, []);
 
@@ -231,6 +261,17 @@ export const ChatManager = ({ navigation, route }) => {
                 )
             })
             }
+            <ConfirmationPopup
+                isVisible={confirmationPopupVisible}
+                title={`Are you sure you want to exit the chat? \n\nAll of your current chats will get disconnected`}
+                positiveLabel="YES"
+                positiveCallback={handleBack}
+                negativeLabel="NO"
+                negativeCallback={() => {
+                    setConfirmationPopupVisible(false);
+                }}
+                popupLoader={confirmationPopupLoading}
+            />
         </View>
     )
 };
