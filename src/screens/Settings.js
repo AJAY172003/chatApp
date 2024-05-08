@@ -20,6 +20,7 @@ import {
 } from '../redux/DataSlice';
 import {routes} from '../constants/routes';
 import {SelectList} from 'react-native-dropdown-select-list';
+
 const genderData = [
   {key: '1', value: 'Female'},
   {key: '2', value: 'Male'},
