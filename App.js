@@ -8,14 +8,14 @@ import FirstScreen from "./src/screens/FirstScreen";
 import { routes } from "./src/constants/routes";
 import { SearchList } from "./src/screens/SearchList";
 import store from "./src/redux/store";
-import {Provider, useDispatch} from 'react-redux';
+import { Provider, useDispatch } from 'react-redux';
 import { ChatManager } from "./src/screens/ChatManager";
 import { WelcomeScreen } from "./src/screens/WelcomeScreen";
 
 
 const Stack = createNativeStackNavigator();
 function App() {
-  
+
   return (
 
     <Provider store={store}>
@@ -27,16 +27,19 @@ function App() {
             }
           }}
         >
-        
+
           <Stack.Screen
             name={routes.WELCOMESCREEN} component={WelcomeScreen} />
           <Stack.Screen
             name={routes.FIRSTSCREEN} component={FirstScreen} />
           <Stack.Screen
-            name={routes.SETTINGS} component={Settings}/>
+            name={routes.SETTINGS} component={Settings} />
           <Stack.Screen
             name={routes.HOMESCREEN} component={HomeScreen} />
-            <Stack.Screen
+          <Stack.Screen
+            options={{
+              c
+            }}
             name={routes.CHATMANAGER} component={ChatManager} />
           <Stack.Screen
             name={routes.CHATSCREEN} component={ChatScreen} />

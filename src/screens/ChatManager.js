@@ -9,6 +9,7 @@ import { ConfirmationPopup } from '../components/ConfirmationPopup';
 import axios from 'axios';
 
 const MAX_CHAT_TAB_LIMIT = 5;
+const HEARTBEAT_TIMER = 2000;
 
 const supabase = createClient("https://ninflipyamhqwcrfymmu.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pbmZsaXB5YW1ocXdjcmZ5bW11Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQ1NTcwOTYsImV4cCI6MjAzMDEzMzA5Nn0.FBRmz0HOlsMUkMXzQiZTXxyLruKqygXjw17g0QuHhPU")
 
@@ -16,6 +17,7 @@ export const ChatManager = ({ navigation, route }) => {
 
     const [confirmationPopupVisible, setConfirmationPopupVisible] = useState(false);
     const [confirmationPopupLoading, setConfirmationPopupLoading] = useState(false);
+    const [isLocked, setIsLocked] = useState(false);
 
     const { userId = uuid.v4() } = route.params;
     const dispatch = useDispatch();
@@ -28,6 +30,8 @@ export const ChatManager = ({ navigation, route }) => {
 
     // Create a function to handle inserts
     const handleInserts = (payload) => {
+        setIsLocked(true);
+
         const latestChatData = chatDataRef.current;
         console.log('Change received!', payload);
         console.log("chatData: ", latestChatData);
@@ -48,6 +52,7 @@ export const ChatManager = ({ navigation, route }) => {
                 console.log("new msg is recieved from senderId: ", senderId);
             }
         }
+        setIsLocked(false);
     }
 
     // Create a function to handle deletes
@@ -61,45 +66,70 @@ export const ChatManager = ({ navigation, route }) => {
         if (user1 == userId || user2 == userId) {
             // if user1 == userId, then find user2 as receiverId in chatData and if user2 == userId, then find user1 as receiverId in chatData
             let chatTabKey = Object.keys(latestChatData).find(key => latestChatData[key].receiverId == (user1 == userId ? user2 : user1));
-            let tempChatData = { ...latestChatData };
 
-            // set receivedId to null and messages to empty array
-            tempChatData[chatTabKey] = { receiverId: null, messages: [] };
-            dispatch(setChatData(tempChatData));
-            console.log("chat is deleted with user1: ", user1, " and user2: ", user2);
+            if (chatTabKey !== undefined) {
+                let tempChatData = { ...latestChatData };
+
+                // set receivedId to null and messages to empty array
+                tempChatData[chatTabKey] = { receiverId: null, messages: [] };
+                dispatch(setChatData(tempChatData));
+                console.log("chat is deleted with user1: ", user1, " and user2: ", user2);
+            }
+        }
+    }
+
+    removeUsers = async (userId, connectedUserIds) => {
+        try {
+            const response = await axios.post('http://192.168.1.2:8000/removeUsers', {
+                userId: userId,
+                connectedUserIds: connectedUserIds
+            });
+
+            if (response.status !== 200) {
+                ToastAndroid.show("Error disconnecting chats", ToastAndroid.SHORT);
+            }
+        }
+        catch (e) {
+            console.log(e);
         }
     }
 
     const handleBack = async () => {
         setConfirmationPopupLoading(true);
-        const response = await axios.post('https://chatserver-arnv.onrender.com/removeUsers', {
-            userId: userId,
-            connectedUserIds: Object.keys(ChatData).map(key => ChatData[key].receiverId)
-        });
-
-        if(response.status !== 200) {
-            ToastAndroid.show("Error disconnecting chats", ToastAndroid.SHORT);
-        }
-
+        removeUsers(userId, Object.keys(ChatData).map(key => ChatData[key].receiverId));
         setConfirmationPopupLoading(true)
         setConfirmationPopupVisible(false);
         navigation.goBack();
     }
 
     useEffect(() => {
+        let interval = null;
         if (userId !== null) {
-
+            console.log("supabase added")
             // Listen to inserts
             supabase
                 .channel('messages')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, handleInserts)
-                .subscribe();
-
-            // Listen to deletes
-            supabase
-                .channel('chat')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${userId}` }, handleInserts)
                 .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat' }, handleDeletes)
                 .subscribe();
+
+            // send heartbeat to server
+            interval = setInterval(() => {
+                supabase
+                    .channel('heartbeat').subscribe((status) => {
+                        // Wait for successful connection
+                        if (status !== 'SUBSCRIBED') {
+                            return null
+                        }
+                        // Send a message once the client is subscribed
+                        supabase
+                            .channel('heartbeat').send({
+                                type: 'broadcast',
+                                event: 'heartbeat',
+                                payload: { userId: userId },
+                            })
+                    })
+            }, HEARTBEAT_TIMER);
         }
 
         const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -114,6 +144,7 @@ export const ChatManager = ({ navigation, route }) => {
                 supabase.removeAllChannels();
             }
             backHandler.remove();
+            clearInterval(interval);
         }
     }, []);
 
@@ -137,6 +168,7 @@ export const ChatManager = ({ navigation, route }) => {
 
     const handleDeleteChatTab = (chatTabToDelete) => {
         let tempChatData = { ...ChatData };
+        removeUsers(userId, [tempChatData[chatTabToDelete].receiverId]);
         delete tempChatData[chatTabToDelete];
         dispatch(setChatData(tempChatData));
         if (CurrentChatTab == chatTabToDelete) {
@@ -154,8 +186,7 @@ export const ChatManager = ({ navigation, route }) => {
         >
             <ScrollView
                 style={{
-                    height: 60,
-                    flex: 1
+                    maxHeight: 80
                 }}
                 contentContainerStyle={{
                     flexDirection: 'row',
@@ -240,6 +271,7 @@ export const ChatManager = ({ navigation, route }) => {
                         style={{
                             width: 36,
                             height: 36,
+                            marginTop: 2,
                             alignSelf: 'center'
                         }}
                         source={require('../assets/images/plus_icon.png')}
@@ -251,12 +283,16 @@ export const ChatManager = ({ navigation, route }) => {
                     <View
                         style={{
                             display: CurrentChatTab == key ? 'flex' : 'none',
-                            height: '80%',
+                            flex: 1,
                             backgroundColor: 'black',
                             flexDirection: 'column'
                         }}
                         key={index}>
-                        <ChatScreen chatTab={key} supabase={supabase} userId={userId} />
+                        <ChatScreen
+                            chatTab={key}
+                            supabase={supabase}
+                            userId={userId}
+                            isLocked={isLocked} />
                     </View>
                 )
             })
