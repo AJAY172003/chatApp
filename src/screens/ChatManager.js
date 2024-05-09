@@ -80,7 +80,7 @@ export const ChatManager = ({ navigation, route }) => {
 
     removeUsers = async (userId, connectedUserIds) => {
         try {
-            const response = await axios.post('http://192.168.1.2:8000/removeUsers', {
+            const response = await axios.post('https://chatserver-arnv.onrender.com/removeUsers', {
                 userId: userId,
                 connectedUserIds: connectedUserIds
             });

@@ -31,7 +31,7 @@ function ChatScreen({ route, navigation, chatTab, supabase, userId, isLocked }) 
     setIsDisconnected(false);
     setNoMatchFound(false);
     try {
-      const response = await axios.post('http://192.168.1.2:8000/user', {
+      const response = await axios.post('https://chatserver-arnv.onrender.com/user', {
         userId: userId,
         language: User.language,
         country: User.country,
