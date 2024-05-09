@@ -37,9 +37,6 @@ function App() {
           <Stack.Screen
             name={routes.HOMESCREEN} component={HomeScreen} />
           <Stack.Screen
-            options={{
-              c
-            }}
             name={routes.CHATMANAGER} component={ChatManager} />
           <Stack.Screen
             name={routes.CHATSCREEN} component={ChatScreen} />
