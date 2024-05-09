@@ -32,7 +32,7 @@ export const WelcomeScreen = ({navigation}) => {
     
   const getUserOnlineNumber = async () => {
     
-    const response = await axios.get('http://192.168.1.6:8000/online');
+    const response = await axios.get('https://chatserver-arnv.onrender.com/online');
     console.log(response.data.numOnlineUsers);
   
     dispatch(setNumUserOnline(response.data.numOnlineUsers));
