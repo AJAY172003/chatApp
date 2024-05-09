@@ -14,12 +14,12 @@ const initialState = {
     Gender: '',
     Language: '',
     Email: '',
-    isPremium: false,
+    isPremium: true,
     isLoggedIn: false,
     isUserInfoFilled: false,
     Email: '',
     premiumSettings:{
-        autoReconnect: false,
+        autoReconnect: true,
         autoMessage:""
     }
   },
