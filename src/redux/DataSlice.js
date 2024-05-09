@@ -7,6 +7,7 @@ const initialState = {
   GenderFilter: null,
   LanguageFilter: null,
   LastFIOffset: 0,
+  NumUserOnline: 0,
   User: {
     Name: '',
     Country: '',
@@ -30,6 +31,10 @@ const DataSlice = createSlice({
   name: 'data',
   initialState,
   reducers: {
+
+    setNumUserOnline(state, { payload }) {
+      state.NumUserOnline = payload;
+    },
     setIsPremium(state, { payload }) {
       state.isPremium = payload;
     },
@@ -72,6 +77,7 @@ export const {
   setGenderFilter,
   setLanguageFilter,
   setUser,
+  setNumUserOnline,
   setChatData,
   setCurrentChatTab,
   setLastFIOffset

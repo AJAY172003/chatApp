@@ -27,7 +27,9 @@ const genderData = [
   {key: '3', value: 'Others'},
 ];
 
+
 function Settings({navigation}) {
+  
   const {CountryFilter, LanguageFilter, SearchKey, User} = useSelector(
     state => state.data,
   );

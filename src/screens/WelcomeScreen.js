@@ -1,12 +1,11 @@
 import {ActivityIndicator, ImageBackground, View} from 'react-native';
 import {getData} from '../utils/storage';
-import {setUser} from '../redux/DataSlice';
+import {setNumUserOnline, setUser} from '../redux/DataSlice';
 import {useDispatch, useSelector} from 'react-redux';
 import {useEffect, useState} from 'react';
 import {routes} from '../constants/routes';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
-
-
+import axios from 'axios';
 export const WelcomeScreen = ({navigation}) => {
   const [hasDataLoaded, setHasDataLoaded] = useState(null);
   const dispatch = useDispatch();
@@ -30,10 +29,21 @@ export const WelcomeScreen = ({navigation}) => {
     return email;
   };
 
-  useEffect(() => {
+    
+  const getUserOnlineNumber = async () => {
+    
+    const response = await axios.get('http://192.168.1.6:8000/online');
+    console.log(response.data.numOnlineUsers);
   
-
+    dispatch(setNumUserOnline(response.data.numOnlineUsers));
+    
+    
+  }
+  useEffect(() => {
+    getUserOnlineNumber()
+   
     getData('user').then(async data => {
+
       if (data != null) {
         GoogleSignin.configure({
           webClientId:
