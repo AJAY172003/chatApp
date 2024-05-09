@@ -76,6 +76,7 @@ android {
 
     namespace "com.randomchat"
     defaultConfig {
+        missingDimensionStrategy "store", "play"
         applicationId "com.randomchat"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
@@ -123,7 +124,7 @@ dependencies {
     implementation("com.facebook.react:react-android")
     implementation 'com.google.android.gms:play-services-auth:21.1.1'
     implementation "androidx.browser:browser:1.8.0"
-
+    
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {

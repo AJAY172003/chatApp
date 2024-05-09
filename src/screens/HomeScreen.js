@@ -1,6 +1,7 @@
-import { useState } from 'react';
 import {
+    Button,
     Image,
+    Modal,
     Text,
     TouchableOpacity,
     View,
@@ -8,11 +9,23 @@ import {
 import Settings from '../assets/images/settings.svg';
 import { routes } from '../constants/routes';
 import { setChatData, setCurrentChatTab } from '../redux/DataSlice';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import uuid from 'react-native-uuid';
-
+import { useEffect, useState } from 'react';
+ 
 export const HomeScreen = ({ navigation }) => {
-    const [numOnlineUsers, setNumOnlineUsers] = useState(2000);
+    const [modalVisible, setModalVisible] = useState(false);
+    const {NumUserOnline} = useSelector(state => state.data);
+    useEffect(() => {   
+        openModal()
+    },[])
+    const openModal = () => {
+        setModalVisible(true);
+      };
+      const closeModal = () => {
+        setModalVisible(false);
+      };
+    console.log("homescreen data: ",NumUserOnline)
     const dispatch = useDispatch();
     return (
         <View
@@ -36,7 +49,7 @@ export const HomeScreen = ({ navigation }) => {
                         fontSize: 18,
                         fontWeight: 'bold',
                     }}>
-                    {`${numOnlineUsers}+\nPEOPLE ARE ONLINE`}
+                    {`${NumUserOnline}\nPEOPLE ARE ONLINE`}
                 </Text>
                 <TouchableOpacity onPress={() => navigation.navigate(routes.SETTINGS)}>
                     <Settings />
@@ -59,12 +72,39 @@ export const HomeScreen = ({ navigation }) => {
                 <Image
                     source={require('../assets/images/chat_with_strangers.png')}
                     style={{
+    
                         resizeMode: 'cover',
                         alignSelf: 'center',
                     }}
                 />
-
+                
             </TouchableOpacity>
+
+            <Modal
+      animationType="slide"
+      transparent={true}
+      visible={modalVisible}
+      onRequestClose={closeModal}
+    >
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+        <View style={{display:'flex',justifyContent:'center',alignItems:'center' ,gap:20 }}>
+         <Image
+                    source={require('../assets/images/behave_wisely.png')}
+                    style={{
+                        borderWidth:1,
+                        borderColor:'white',
+                        borderRadius:20,
+                        height:300,
+                        width:280,
+                        resizeMode: 'cover',
+                        alignSelf: 'center',
+                    }}
+                />
+               <Text style={{color:'white',fontSize:30,fontWeight:500}}>Behave Wisely</Text> 
+          <Button title="Continue"  onPress={closeModal} color={"#051EFF"} />
+        </View>
+      </View>
+    </Modal>
         </View>
     );
 };
