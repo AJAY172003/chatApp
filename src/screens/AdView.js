@@ -45,7 +45,7 @@ export const AdView = React.memo(({ index, media = true, type, loadOnMount = tru
          * If you have recently created AdMob IDs for your ads, it might take
          * a few days until the ads will start showing.
          */
-        console.log('AD', 'FAILED', event.error.message);
+        console.log('AD', 'FAILED', event);
     };
 
     const onAdLoaded = () => {
@@ -101,7 +101,6 @@ export const AdView = React.memo(({ index, media = true, type, loadOnMount = tru
         }
     };
 
-
     return (
         <NativeAdView
             ref={nativeAdRef}
@@ -123,7 +122,7 @@ export const AdView = React.memo(({ index, media = true, type, loadOnMount = tru
             mediationOptions={{
                 nativeBanner: true,
             }}
-            adUnitID={'ca-app-pub-3940256099942544/2247696110'} // REPLACE WITH NATIVE_AD_VIDEO_ID for video ads.
+            adUnitID={'ca-app-pub-5213405198446794/1322226819'} // REPLACE WITH NATIVE_AD_VIDEO_ID for video ads.
         >
             <View
                 style={{
@@ -134,8 +133,6 @@ export const AdView = React.memo(({ index, media = true, type, loadOnMount = tru
                     backgroundColor: '#211F1F',
                     borderBottomLeftRadius: 23,
                     borderBottomRightRadius: 23,
-                    borderTopLeftRadius: media ? 0 : 23,
-                    borderTopRightRadius: media ? 0 : 23,
                     paddingBottom: 20,
                 }}>
                 <View
@@ -197,14 +194,15 @@ export const AdView = React.memo(({ index, media = true, type, loadOnMount = tru
                             <View
                                 style={{
                                     flexDirection: 'column',
+                                    overflow: 'hidden',
                                 }}
                             >
                                 <HeadlineView
-                                    hello="abc"
                                     style={{
                                         fontWeight: 'bold',
                                         fontSize: 14,
                                         color: 'white',
+                                        paddingRight: 30,
                                     }}
                                 />
                                 <View key={index} style={{
@@ -237,8 +235,8 @@ export const AdView = React.memo(({ index, media = true, type, loadOnMount = tru
                                 justifyContent: 'center',
                                 alignItems: 'center',
                                 elevation: 10,
-                                width: 100,
-                                marginTop: 10
+                                marginTop: 10,
+                                width: '80%'
                             },
                             Platform.OS === 'ios'
                                 ? {
@@ -248,7 +246,7 @@ export const AdView = React.memo(({ index, media = true, type, loadOnMount = tru
                                 : {},
                         ]}
                         buttonAndroidStyle={{
-                            backgroundColor: '#051EFF'
+                            backgroundColor: '#051EFF',
                         }}
                         allCaps
                         textStyle={{

@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { setChatData, setCurrentChatTab, setRequiredFilters } from "../redux/DataSlice";
 import { routes } from "../constants/routes";
 import uuid from 'react-native-uuid';
+import { getCommonLikes } from "../utils/api";
 
 export const CommonLikes = ({ route, navigation }) => {
 
@@ -17,9 +18,7 @@ export const CommonLikes = ({ route, navigation }) => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch(`http://192.168.1.2:8000/commonlikes`);
-                const data = await response.json();
-                const commonlikes = data.commonlikes;
+                const commonlikes = await getCommonLikes();
                 setLikes(commonlikes);
                 setIsRequesting(false);
             } catch (error) {

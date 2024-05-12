@@ -39,12 +39,15 @@ function App() {
               backgroundColor: '#0000000',
             },
           }}>
-          <Stack.Screen name={routes.SETTINGS} component={Settings} />
+             <Stack.Screen name={routes.WELCOMESCREEN} component={WelcomeScreen} />
+            <Stack.Screen name={routes.SETTINGS} component={Settings} />
+           
+          
           <Stack.Screen
             name={routes.PAYMENT_PROCESSING}
             component={PaymentProcessing}
           />
-          <Stack.Screen name={routes.WELCOMESCREEN} component={WelcomeScreen} />
+          
           <Stack.Screen name={routes.FIRSTSCREEN} component={FirstScreen} />
 
           <Stack.Screen name={routes.HOMESCREEN} component={HomeScreen} />

@@ -320,7 +320,7 @@ function Settings({ navigation }) {
           </View>
           {
             User.isPremium ? <></> :
-              <TouchableOpacity color='white' onPress={scrollToTop}>
+              <TouchableOpacity color='white' onPress={() => (User.Email && User.Email.length) ? navigation.navigate(routes.PAYMENT_PROCESSING) : scrollToTop()}>
                 <View
                   style={{
                     backgroundColor: '#051EFF',

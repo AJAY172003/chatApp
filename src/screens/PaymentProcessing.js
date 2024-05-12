@@ -1,26 +1,27 @@
 import {useEffect, useRef, useState} from 'react';
 import {InAppPurchasePayments} from './InAppPurchase';
-import {getSubscriptions, initConnection} from 'react-native-iap';
+import {initConnection} from 'react-native-iap';
 import axios from 'axios';
-import {ActivityIndicator, Button, View, Text} from 'react-native';
-import {createClient} from '@supabase/supabase-js';
-import {useSelector} from 'react-redux';
+import {ActivityIndicator, View, Text, ToastAndroid, Image} from 'react-native';
+import {useDispatch, useSelector} from 'react-redux';
 import {routes} from '../constants/routes';
-
-const client = createClient(
-  'https://ninflipyamhqwcrfymmu.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pbmZsaXB5YW1ocXdjcmZ5bW11Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQ1NTcwOTYsImV4cCI6MjAzMDEzMzA5Nn0.FBRmz0HOlsMUkMXzQiZTXxyLruKqygXjw17g0QuHhPU',
-);
+import {setUser} from '../redux/DataSlice';
+import {supaClient} from '../utils/SupaClient';
+import {verifyPayment} from '../utils/api';
 
 function PaymentProcessing({navigation}) {
   const {User} = useSelector(state => state.data);
   const SKU_IDs = 'litsub99';
   const purchaseTokenRef = useRef(null);
-  const subIdRef =useRef(null);
+  const subIdRef = useRef(null);
+  const [transactionFailed, setTransactionFailed] = useState(false);
+
+  const dispatch = useDispatch();
+
   useEffect(() => {
     InitializeConnection();
     makingPurchase();
-    const channelA = client.channel('payment');
+    const channelA = supaClient.channel('payment');
 
     // Subscribe to the Channel
     channelA
@@ -43,21 +44,22 @@ function PaymentProcessing({navigation}) {
         subIdRef.current,
       );
 
-      axios
-        .post('http://192.168.1.6:3000/payment', {
-          purchaseToken: purchaseTokenRef.current,
-          email: 'sumitsrawat2003@gmail.com',
-          subId: subIdRef.current,
-        })
+      verifyPayment({
+        purchaseToken: purchaseTokenRef.current,
+        email: User.Email,
+        subId: subIdRef.current,
+      })
         .then(function (response) {
-          console.log(response.data);
+          // TODO: handle other status codes too in future
+          dispatch(setUser({...User, isPremium: true}));
+          ToastAndroid.show('Your subscription is live now', ToastAndroid.LONG);
           navigation.navigate(routes.SETTINGS);
         })
         .catch(function (error) {
-          navigation.navigate(routes.SETTINGS);
+          console.log('transaction failed');
+          setTransactionFailed(true);
           console.log(error);
         });
-      console.log('this is the sub id.....', subId);
     } else {
       console.log('wrong purchase token received');
     }
@@ -77,8 +79,10 @@ function PaymentProcessing({navigation}) {
         console.log('this is the sub id', paymentResult.detail[0].productId);
       } else {
         console.log('payment failed');
+        navigation.goBack();
       }
     } catch (error) {
+      navigation.goBack();
       console.log('Payment error:', error);
     }
   };
@@ -87,10 +91,6 @@ function PaymentProcessing({navigation}) {
     try {
       await initConnection();
       console.log('Connection initialized');
-      //   const sub = await getSubscriptions({skus: ['litsub99']}).then(result => {
-      //     console.log('result of subscription', result[0].subscriptionOfferDetails);
-
-      //   });
     } catch (error) {
       console.log('Error checking subscription status:', error);
     }
@@ -105,22 +105,56 @@ function PaymentProcessing({navigation}) {
         display: 'flex',
         height: '100%',
       }}>
-      <View
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}>
-        <ActivityIndicator size="large" color="#00ff00" />
-        <Text style={{color: 'white', fontSize: 20, fontWeight: 500}}>
-          Processing Payment
-        </Text>
-        <Text style={{color: 'white', fontSize: 15, fontWeight: 500}}>
-          Do not press back or close the app
-        </Text>
-      </View>
-
-      {/* <Button title="Purchase" onPress={() => makingPurchase()} /> */}
+      {!transactionFailed ? (
+        <View
+          style={{
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <ActivityIndicator size="large" color="#00ff00" />
+          <Text style={{color: 'white', fontSize: 20, fontWeight: 500}}>
+            Processing Payment
+          </Text>
+          <Text style={{color: 'white', fontSize: 15, fontWeight: 500}}>
+            Do not press back or close the app
+          </Text>
+        </View>
+      ) : (
+        <View
+          style={{
+            alignItems: 'center',
+            paddingHorizontal: 20,
+          }}>
+          <Image
+            source={require('../assets/images/exclamation_icon.png')}
+            style={{
+              width: 70,
+              height: 70,
+              alignSelf: 'center',
+            }}
+          />
+          <Text
+            style={{
+              color: 'white',
+              fontSize: 20,
+              fontWeight: 500,
+              marginTop: 10,
+            }}>
+            Payment Verification Failed
+          </Text>
+          <Text
+            style={{
+              color: 'white',
+              fontSize: 12,
+              fontWeight: 500,
+              marginTop: 10,
+            }}>
+            We are unable to verify your payment. Your payment will be refunded
+            in 3-5 business days. If you have any queries, please contact our
+            support team.
+          </Text>
+        </View>
+      )}
     </View>
   );
 }

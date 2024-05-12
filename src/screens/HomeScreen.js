@@ -166,7 +166,7 @@ export const HomeScreen = ({ navigation }) => {
                         }}
                     >
                         <ImageBackground
-                            source={require('../assets/images/discuss_icon.png')}
+                            source={require('../assets/images/common_likes_banner.png')}
                             style={{
                                 resizeMode: 'contain',
                                 height: 90

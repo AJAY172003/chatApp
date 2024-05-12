@@ -2,23 +2,16 @@ import { useEffect } from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native"
 import { useSelector, useDispatch } from "react-redux"
 import { setIsBlocked, setReports } from "../redux/DataSlice";
-import axios from "axios";
+import { getUserDailyReports } from "../utils/api";
 
 export const AccountHealth = ({ route, navigation }) => {
 
     const dispatch = useDispatch();
     const { Reports, IP } = useSelector(state => state.data);
 
-    const getUserDailyReportsAndBlockedStatus = async () => {
-        const response = await axios.get('http://192.168.1.2:8000/dailyUserReports?ip=' + IP);
-        const reports = response.data.reports;
-        const isBlocked = response.data.blocked;
-        return { reports, isBlocked };
-    }
-
     useEffect(() => {
         async function fetchData() {
-            const { reports, isBlocked } = await getUserDailyReportsAndBlockedStatus();
+            const { reports, isBlocked } = await getUserDailyReports(IP);
             dispatch(setReports(reports.length));
             dispatch(setIsBlocked(isBlocked));
         }

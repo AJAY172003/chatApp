@@ -1,37 +1,22 @@
 import { View, Text, TouchableOpacity, Button } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Google from '../assets/images/google.svg';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   GoogleSignin,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import { createClient } from '@supabase/supabase-js';
 import { setUser } from '../redux/DataSlice';
+import { GOOGLE_SIGIN_WEB_CLIENT_ID } from '../utils/creds';
+import { checkAndCreateUser } from '../utils/SupaClient';
 
 function GoogleSigninScreen() {
   const dispatch = useDispatch();
   const { User } = useSelector(state => state.data);
-  const supabase = createClient(
-    'https://ninflipyamhqwcrfymmu.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pbmZsaXB5YW1ocXdjcmZ5bW11Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQ1NTcwOTYsImV4cCI6MjAzMDEzMzA5Nn0.FBRmz0HOlsMUkMXzQiZTXxyLruKqygXjw17g0QuHhPU',
-  );
-
-  const checkAndCreateUser = async (name, email) => {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .insert([{ email: email, name: name }]);
-      if (error) throw error;
-    } catch (error) {
-      console.error('User already exists: ', error.message);
-    }
-  };
 
   useEffect(() => {
     GoogleSignin.configure({
-      webClientId:
-        '968408332254-qiqjdjqh6m6t7f97n0l3u9os47rdh5t7.apps.googleusercontent.com',
+      webClientId: GOOGLE_SIGIN_WEB_CLIENT_ID,
       offlineAccess: true,
       forceCodeForRefreshToken: true,
     });

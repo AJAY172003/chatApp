@@ -4,8 +4,9 @@ import { useSelector, useDispatch } from "react-redux"
 import { routes } from "../constants/routes";
 import { setChatData, setCurrentChatTab, setRequiredFilters } from "../redux/DataSlice";
 import uuid from 'react-native-uuid';
+import { getCountryChatInfo } from "../utils/api";
 
-export const CountryChat = ({ route, navigation }) => {
+export const CountryChat = ({ navigation }) => {
 
     const [userCountryStat, setUserCountryStat] = useState({});
     const [otherCountriesStat, setOtherCountriesStat] = useState([]);
@@ -17,9 +18,7 @@ export const CountryChat = ({ route, navigation }) => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch(`http://192.168.1.2:8000/countries?country=${User.Country}`);
-                const data = await response.json();
-                const countriesStats = data.countries;
+                const countriesStats = await getCountryChatInfo(User.Country);
 
                 const userCountryStat = countriesStats.find(countryStat => countryStat.country === User.Country);
                 if (userCountryStat) {

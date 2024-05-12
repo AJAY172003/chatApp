@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from "react-redux"
 import { routes } from "../constants/routes";
 import { setChatData, setCurrentChatTab, setRequiredFilters } from "../redux/DataSlice";
 import uuid from 'react-native-uuid';
+import { getChatRooms } from "../utils/api";
 
 export const ChatRoom = ({ route, navigation }) => {
 
@@ -11,14 +12,11 @@ export const ChatRoom = ({ route, navigation }) => {
     const [isRequesting, setIsRequesting] = useState(true);
 
     const dispatch = useDispatch();
-    const { User } = useSelector(state => state.data);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch(`http://192.168.1.2:8000/chatrooms`);
-                const data = await response.json();
-                const chatRoomsData = data.chatrooms;
+                const chatRoomsData = await getChatRooms();
 
                 // sort the chatrooms by number of users
                 chatRoomsData.sort((a, b) => {

@@ -1,14 +1,15 @@
-import { ActivityIndicator, ImageBackground, View } from 'react-native';
+import { ActivityIndicator, ImageBackground } from 'react-native';
 import { getData } from '../utils/storage';
 import { setIP, setIsBlocked, setNumUserOnline, setReports, setUser } from '../redux/DataSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { routes } from '../constants/routes';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import axios from 'axios';
 import publicIP from 'react-native-public-ip';
 import { StackActions } from '@react-navigation/native';
-
+import { getOnlineUsers, getUserDailyReports } from '../utils/api';
+import { GOOGLE_SIGIN_WEB_CLIENT_ID } from '../utils/creds';
+import { getUserByEmail } from '../utils/SupaClient';
 
 const MAX_REPORTS = 10;
 export const WelcomeScreen = ({ navigation }) => {
@@ -34,17 +35,29 @@ export const WelcomeScreen = ({ navigation }) => {
     return email;
   };
 
-
   const getUserOnlineNumber = async () => {
-    const response = await axios.get('http://192.168.1.2:8000/online');
-    dispatch(setNumUserOnline(response.data.numOnlineUsers));
+    await getOnlineUsers().then((data) => {
+      dispatch(setNumUserOnline(data));
+    });
   }
 
-  const getUserDailyReportsAndBlockedStatus = async (ip) => {
-    const response = await axios.get('http://192.168.1.2:8000/dailyUserReports?ip=' + ip);
-    const reports = response.data.reports;
-    const isBlocked = response.data.blocked;
-    return { reports, isBlocked };
+  const doBasicSetup = async () => {
+    let ipRes = '';
+    try {
+      ipRes = await publicIP();
+    } catch (e) {
+      console.log("error in getting ip: ", e);
+    }
+
+    if (ipRes.length) {
+      dispatch(setIP(ipRes));
+      const { reports, isBlocked } = await getUserDailyReports(ipRes);
+      dispatch(setReports(Math.min(reports.length, MAX_REPORTS)));
+      console.log("isBlocked: ", isBlocked);
+      dispatch(setIsBlocked(isBlocked));
+    }
+
+    await getUserOnlineNumber();
   }
 
   useEffect(() => {
@@ -52,31 +65,22 @@ export const WelcomeScreen = ({ navigation }) => {
     getData('user').then(async data => {
 
       if (data != null) {
-        let ipRes = '';
-        try {
-          ipRes = await publicIP();
-        } catch (e) {
-          console.log("error in getting ip: ", e);
-        }
-
-        if (ipRes.length) {
-          const { reports, isBlocked } = await getUserDailyReportsAndBlockedStatus(ipRes);
-          dispatch(setReports(Math.min(reports.length, MAX_REPORTS)));
-          console.log("isBlocked: ", isBlocked);
-          dispatch(setIsBlocked(isBlocked));
-        }
-
-        await getUserOnlineNumber();
+        await doBasicSetup();
 
         GoogleSignin.configure({
           webClientId:
-            '968408332254-qiqjdjqh6m6t7f97n0l3u9os47rdh5t7.apps.googleusercontent.com',
+            GOOGLE_SIGIN_WEB_CLIENT_ID,
           offlineAccess: true,
           forceCodeForRefreshToken: true,
         });
         const email = await issignIn();
         if (email != null) {
-          data = { ...data, Email: email };
+
+          // TODO: check if subscription for user with email is active from payment server
+          // update premium status accordingly
+
+          
+          data = { ...data, Email: email, isPremium: false };
         }
 
         if (!data.isPremium) {
@@ -89,9 +93,9 @@ export const WelcomeScreen = ({ navigation }) => {
         }
 
         dispatch(setUser(data));
-        dispatch(setIP(ipRes));
         setHasDataLoaded(true);
       } else {
+        await doBasicSetup();
         setHasDataLoaded(true);
       }
     });

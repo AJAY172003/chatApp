@@ -1,0 +1,3 @@
+export const GOOGLE_SIGIN_WEB_CLIENT_ID = '410497703187-15ht0kt2skbhku7eb88macklfi7f7msj.apps.googleusercontent.com';
+export const SUPABASE_URL = 'https://ninflipyamhqwcrfymmu.supabase.co'
+export const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pbmZsaXB5YW1ocXdjcmZ5bW11Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQ1NTcwOTYsImV4cCI6MjAzMDEzMzA5Nn0.FBRmz0HOlsMUkMXzQiZTXxyLruKqygXjw17g0QuHhPU'
