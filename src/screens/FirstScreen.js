@@ -1,33 +1,34 @@
-import React, {useEffect, useState} from 'react';
-import Arrow from '../assets/images/arroe.svg';
-import {View, Text, TouchableOpacity, TextInput} from 'react-native';
-import {useDispatch, useSelector} from 'react-redux';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, TextInput, ScrollView, Image } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   setCountryFilter,
   setLanguageFilter,
   setSearchKey,
   setUser,
 } from '../redux/DataSlice';
-import {routes} from '../constants/routes';
-import {SelectList} from 'react-native-dropdown-select-list';
+import { routes } from '../constants/routes';
+import { SelectList } from 'react-native-dropdown-select-list';
+import { StackActions } from '@react-navigation/native';
 
 const genderData = [
-  {key: '1', value: 'Female'},
-  {key: '2', value: 'Male'},
-  {key: '3', value: 'Others'},
+  { key: '1', value: 'Female' },
+  { key: '2', value: 'Male' },
+  { key: '3', value: 'Others' },
 ];
 
-function FirstScreen({navigation}) {
+function FirstScreen({ navigation }) {
   const [country, setCountry] = useState('');
   const [language, setLanguage] = useState('');
   const [gender, setGender] = useState('');
 
   const dispatch = useDispatch();
-  const {CountryFilter, LanguageFilter, SearchKey} = useSelector(
+  const { CountryFilter, LanguageFilter, SearchKey } = useSelector(
     state => state.data,
   );
 
   useEffect(() => {
+
     if (SearchKey == 'country' && CountryFilter !== null) {
       setCountry(CountryFilter);
       dispatch(setCountryFilter(null));
@@ -46,7 +47,7 @@ function FirstScreen({navigation}) {
       isUserInfoFilled: true
     };
     dispatch(setUser(user));
-    navigation.navigate(routes.HOMESCREEN);
+    navigation.dispatch(StackActions.replace(routes.HOMESCREEN, {params: {}}));
   };
 
   const [value, setValue] = useState('');
@@ -64,71 +65,79 @@ function FirstScreen({navigation}) {
   }, [country, language, gender, value]);
 
   return (
-    <View
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      showsHorizontalScrollIndicator={false}
       style={{
         backgroundColor: '#211F1F',
-        height: 800,
-        alignItems: 'center',
+        height: '100%'
       }}>
       <View
         style={{
           backgroundColor: '#211F1F',
-          height: '70%',
-          width: '100%',
-          alignItems: 'center',
           justifyContent: 'space-evenly',
+          paddingHorizontal: 10
         }}>
-        <View style={{width: '80%', display: 'flex'}}>
-          <Text style={{color: 'white', fontWeight: 900, fontSize: 30}}>
-            Tell us about yourself
-          </Text>
-        </View>
-  
+        <Text
+          style={{
+            color: 'white',
+            fontWeight: 700,
+            fontSize: 40,
+            marginTop: 40
+          }}>
+          Tell us about yourself
+        </Text>
+        <Text
+          style={{
+            color: 'white',
+            fontSize: 14,
+            lineHeight: 18,
+            fontWeight: 500,
+            marginTop: 10,
+            paddingRight: 30
+          }}>
+          Join a chat room and talk with strangers about certain things
+        </Text>
         <View
           style={{
-            paddingHorizontal: 10,
             paddingVertical: 20,
-            width: '90%',
-            height: 400,
           }}>
-          <Text style={{color: 'white', fontWeight: 500}}>
-            Join a chat room and talk with strangers about certain things
-          </Text>
-        
+
           <TextInput
             onChangeText={setValue}
             value={value}
             style={{
-              padding: 15,
+              padding: 10,
+              height: 55,
               fontWeight: '700',
               color: 'white',
-              fontSize: 16,
+              fontSize: 24,
               backgroundColor: '#051EFF',
             }}
             placeholder="Name"
             placeholderTextColor={'white'}
-          /> 
+          />
 
           <SelectList
             setSelected={setGender}
             data={genderData}
             save="value"
             search={false}
-            dropdownStyles={{backgroundColor:'#212B7F',borderWidth:0}}
-            dropdownTextStyles={{color:'white'}}
-            
+            dropdownStyles={{ backgroundColor: '#212B7F', borderWidth: 0 }}
+            dropdownTextStyles={{ color: 'white' }}
+
             boxStyles={{
               backgroundColor: '#051EFF',
               borderRadius: 0,
-              marginTop: 20,
+              height: 55,
+              marginTop: 15,
               borderWidth: 0,
               paddingHorizontal: 10,
             }}
             inputStyles={{
               fontWeight: 700,
-
               color: 'white',
-              fontSize: 16,
+              fontSize: 24,
             }}
             placeholder={gender.length ? gender : 'Select Gender'}
           />
@@ -148,8 +157,9 @@ function FirstScreen({navigation}) {
                 style={{
                   fontWeight: '700',
                   color: 'white',
-                  fontSize: 16,
-                  marginTop: 20,
+                  fontSize: 24,
+                  height: 55,
+                  marginTop: 15,
                   backgroundColor: '#051EFF',
                   paddingHorizontal: 10,
                 }}
@@ -171,8 +181,9 @@ function FirstScreen({navigation}) {
               style={{
                 fontWeight: '700',
                 color: 'white',
-                fontSize: 16,
-                marginTop: 20,
+                height: 55,
+                fontSize: 24,
+                marginTop: 15,
                 backgroundColor: '#051EFF',
                 paddingHorizontal: 10,
               }}
@@ -183,29 +194,46 @@ function FirstScreen({navigation}) {
               style={{
                 backgroundColor: '#212B7F',
                 display: 'flex',
+                flexDirection: 'row',
                 justifyContent: 'flex-end',
-                alignItems: 'flex-end',
-                marginTop: 20,
+                marginTop: 55,
+                height: 55
               }}>
-              <Arrow />
+              <Image
+                source={require('../assets/images/arrow_icon.png')}
+                style={{
+                  alignSelf: 'center',
+                  marginRight: 30,
+                  width: 50,
+                  height: 50
+                }}
+              />
             </View>
           ) : (
             <TouchableOpacity onPress={Save}>
               <View
                 style={{
                   backgroundColor: '#051EFF',
-                  display: 'flex',
+                  flexDirection: 'row',
                   justifyContent: 'flex-end',
-                  alignItems: 'flex-end',
                   marginTop: 20,
+                  height: 55
                 }}>
-                <Arrow />
+                <Image
+                  source={require('../assets/images/arrow_icon.png')}
+                  style={{
+                    alignSelf: 'center',
+                    marginRight: 30,
+                    width: 50,
+                    height: 50
+                  }}
+                />
               </View>
             </TouchableOpacity>
           )}
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 export default FirstScreen;

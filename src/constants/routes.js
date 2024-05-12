@@ -8,6 +8,9 @@ export const routes = {
     SETTINGS: 'Settings',
     FIRSTSCREEN: 'FirstScreen',
     ADSCREEN: 'AdScreen',
-    SEARCHLIST: 'SearchList'
-
+    SEARCHLIST: 'SearchList',
+    COUNTRYCHAT: 'CountryChat',
+    CHATROOM: 'ChatRoom',
+    COMMONLIKES: 'CommonLikes',
+    ACCOUNTHEALTH: 'AccountHealth',
 };

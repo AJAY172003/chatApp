@@ -11,10 +11,24 @@ import store from "./src/redux/store";
 import { Provider, useDispatch } from 'react-redux';
 import { ChatManager } from "./src/screens/ChatManager";
 import { WelcomeScreen } from "./src/screens/WelcomeScreen";
-
+import { CountryChat } from "./src/screens/CountryChat";
+import { ChatRoom } from "./src/screens/ChatRoom";
+import { CommonLikes } from "./src/screens/CommonLikes";
+import { AccountHealth } from "./src/screens/AccountHealth";
+import { AdView } from "./src/screens/AdView";
+import { AdManager } from "react-native-admob-native-ads";
 
 const Stack = createNativeStackNavigator();
 function App() {
+  AdManager.setRequestConfiguration({
+    testDeviceIds: ["YOUR_TEST_DEVICE_ID"],
+    maxAdContetRating: "MA",
+    tagForChildDirectedTreatment: false,
+    tagForUnderAgeConsent: false,
+  }).then(() => {
+    console.log("Request configuration set");
+  }
+  );
 
   return (
 
@@ -27,7 +41,8 @@ function App() {
             }
           }}
         >
-
+          {/* <Stack.Screen
+            name={"AdView"} component={AdView} /> */}
           <Stack.Screen
             name={routes.WELCOMESCREEN} component={WelcomeScreen} />
           <Stack.Screen
@@ -36,6 +51,14 @@ function App() {
             name={routes.SETTINGS} component={Settings} />
           <Stack.Screen
             name={routes.HOMESCREEN} component={HomeScreen} />
+          <Stack.Screen
+            name={routes.COUNTRYCHAT} component={CountryChat} />
+          <Stack.Screen
+            name={routes.CHATROOM} component={ChatRoom} />
+          <Stack.Screen
+            name={routes.COMMONLIKES} component={CommonLikes} />
+          <Stack.Screen
+            name={routes.ACCOUNTHEALTH} component={AccountHealth} />
           <Stack.Screen
             name={routes.CHATMANAGER} component={ChatManager} />
           <Stack.Screen

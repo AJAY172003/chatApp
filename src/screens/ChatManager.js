@@ -1,12 +1,13 @@
-import { BackHandler, Image, ScrollView, Text, ToastAndroid, TouchableOpacity, View } from 'react-native';
+import { BackHandler, Image, Modal, ScrollView, Text, ToastAndroid, TouchableOpacity, View, AppState } from 'react-native';
 import uuid from 'react-native-uuid';
 import { useDispatch, useSelector } from 'react-redux';
-import { setChatData, setCurrentChatTab } from '../redux/DataSlice';
+import { setChatData, setCurrentChatTab, setIsBlocked } from '../redux/DataSlice';
 import { createClient } from '@supabase/supabase-js'
 import { useEffect, useRef, useState } from 'react';
 import ChatScreen from '../components/ChatScreen';
 import { ConfirmationPopup } from '../components/ConfirmationPopup';
 import axios from 'axios';
+import BackgroundTimer from 'react-native-background-timer';
 
 const MAX_CHAT_TAB_LIMIT = 5;
 const HEARTBEAT_TIMER = 2000;
@@ -18,11 +19,20 @@ export const ChatManager = ({ navigation, route }) => {
     const [confirmationPopupVisible, setConfirmationPopupVisible] = useState(false);
     const [confirmationPopupLoading, setConfirmationPopupLoading] = useState(false);
     const [isLocked, setIsLocked] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
 
-    const { userId = uuid.v4() } = route.params;
+    const { userId = uuid.v4(), countryChat = false, countryChatValue = '' } = route.params;
     const dispatch = useDispatch();
     const chatDataRef = useRef(null);
-    const { ChatData, CurrentChatTab } = useSelector(state => state.data);
+    const { ChatData, CurrentChatTab, IP } = useSelector(state => state.data);
+
+    const openModal = () => {
+        setModalVisible(true);
+    };
+
+    const closeModal = () => {
+        setModalVisible(false);
+    };
 
     useEffect(() => {
         chatDataRef.current = ChatData;
@@ -46,7 +56,11 @@ export const ChatManager = ({ navigation, route }) => {
                 let tempChatData = { ...latestChatData };
                 let chatTabKey = Object.keys(tempChatData).find(key => tempChatData[key].receiverId == senderId);
                 console.log(chatTabKey)
-                tempChatData[chatTabKey] = { ...tempChatData[chatTabKey], messages: [...tempChatData[chatTabKey].messages, { text: payload.new.message, belongs_to: false, messageId: payload.new.messageId }] };
+                tempChatData[chatTabKey] = {
+                    ...tempChatData[chatTabKey],
+                    messages: [...tempChatData[chatTabKey].messages, { text: payload.new.message, belongs_to: false, messageId: payload.new.messageId }],
+                    unseenMessages: CurrentChatTab == chatTabKey ? 0 : tempChatData[chatTabKey].unseenMessages + 1
+                };
                 dispatch(setChatData(tempChatData));
                 console.log(tempChatData)
                 console.log("new msg is recieved from senderId: ", senderId);
@@ -71,16 +85,16 @@ export const ChatManager = ({ navigation, route }) => {
                 let tempChatData = { ...latestChatData };
 
                 // set receivedId to null and messages to empty array
-                tempChatData[chatTabKey] = { receiverId: null, messages: [] };
+                tempChatData[chatTabKey] = { receiverId: null, messages: [], unseenMessages: 0 };
                 dispatch(setChatData(tempChatData));
                 console.log("chat is deleted with user1: ", user1, " and user2: ", user2);
             }
         }
     }
 
-    removeUsers = async (userId, connectedUserIds) => {
+    const removeUsers = async (userId, connectedUserIds) => {
         try {
-            const response = await axios.post('https://chatserver-arnv.onrender.com/removeUsers', {
+            const response = await axios.post('http://192.168.1.2:8000/removeUsers', {
                 userId: userId,
                 connectedUserIds: connectedUserIds
             });
@@ -97,38 +111,74 @@ export const ChatManager = ({ navigation, route }) => {
     const handleBack = async () => {
         setConfirmationPopupLoading(true);
         removeUsers(userId, Object.keys(ChatData).map(key => ChatData[key].receiverId));
-        setConfirmationPopupLoading(true)
+        setConfirmationPopupLoading(false)
         setConfirmationPopupVisible(false);
         navigation.goBack();
     }
 
+    const handleBlocked = (payload) => {
+        dispatch(setIsBlocked(true));
+        handleBack();
+    }
+
+    const pingServer = async () => {
+        const channel = supabase.channel('heartbeat');
+        channel.subscribe((status) => {
+            // Wait for successful connection
+            if (status !== 'SUBSCRIBED') {
+                return null
+            }
+            // Send a message once the client is subscribed
+            supabase
+                .channel('heartbeat').send({
+                    type: 'broadcast',
+                    event: 'heartbeat',
+                    payload: { userId: userId },
+                })
+        });
+    }
+
+    const task = async (taskId) => {
+        console.log('[BackgroundFetch] TaskId:', taskId);
+
+        // Execute your task logic here
+        // For example, ping the server
+        try {
+            pingServer();
+        } catch (error) {
+            console.error('[BackgroundFetch] Error:', error);
+        }
+    };
+
     useEffect(() => {
+
+        const subscription = AppState.addEventListener('change', nextAppState => {
+            if (nextAppState.match(/inactive|background/)) {
+                console.log("state is in background")
+                BackgroundTimer.runBackgroundTimer(() => {
+                    pingServer();
+                },
+                    HEARTBEAT_TIMER);
+                //rest of code will be performing for iOS on background too
+            } else {
+                console.log("state is in foreground")
+                BackgroundTimer.stopBackgroundTimer();
+            }
+        });
+
         let interval = null;
         if (userId !== null) {
-            console.log("supabase added")
             // Listen to inserts
             supabase
                 .channel('messages')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${userId}` }, handleInserts)
                 .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat' }, handleDeletes)
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'blocked' }, handleBlocked)
                 .subscribe();
 
             // send heartbeat to server
             interval = setInterval(() => {
-                supabase
-                    .channel('heartbeat').subscribe((status) => {
-                        // Wait for successful connection
-                        if (status !== 'SUBSCRIBED') {
-                            return null
-                        }
-                        // Send a message once the client is subscribed
-                        supabase
-                            .channel('heartbeat').send({
-                                type: 'broadcast',
-                                event: 'heartbeat',
-                                payload: { userId: userId },
-                            })
-                    })
+                pingServer();
             }, HEARTBEAT_TIMER);
         }
 
@@ -139,11 +189,11 @@ export const ChatManager = ({ navigation, route }) => {
 
 
         return () => {
-            console.log("supabase removed")
             if (userId !== null) {
                 supabase.removeAllChannels();
             }
             backHandler.remove();
+            subscription.remove();
             clearInterval(interval);
         }
     }, []);
@@ -159,7 +209,8 @@ export const ChatManager = ({ navigation, route }) => {
             let tempChatData = { ...ChatData };
             tempChatData[newChatTab] = {
                 messages: [],
-                receiverId: null
+                receiverId: null,
+                unseenMessages: 0
             };
             dispatch(setChatData(tempChatData));
             dispatch(setCurrentChatTab(newChatTab));
@@ -176,108 +227,167 @@ export const ChatManager = ({ navigation, route }) => {
         }
     }
 
+    const reportUser = async (reason) => {
+
+        if (ChatData[CurrentChatTab].receiverId !== null) {
+            closeModal();
+            try {
+                const response = await axios.post('http://192.168.1.2:8000/reportUser', {
+                    userId: userId,
+                    receiverId: ChatData[CurrentChatTab].receiverId,
+                    reason: reason
+                });
+                removeUsers(userId, [ChatData[CurrentChatTab].receiverId]);
+                ToastAndroid.show("Stranger has been reported", ToastAndroid.SHORT);
+            }
+            catch (e) {
+                console.log(e);
+                ToastAndroid.show("Stranger has been reported", ToastAndroid.SHORT);
+            }
+        }
+    }
+
+    const formatTabName = (key) => {
+        if (CurrentChatTab == key) {
+            return `@`;
+        }
+        else if (ChatData[key].receiverId == null) {
+            return 'X';
+        }
+        else {
+            return ChatData[key].unseenMessages
+        }
+    }
+
     return (
         <View
             style={{
                 height: '100%',
                 width: '100%',
-                backgroundColor: 'black'
+                backgroundColor: '#211F1F',
             }}
         >
-            <ScrollView
-                style={{
-                    maxHeight: 80
-                }}
-                contentContainerStyle={{
-                    flexDirection: 'row',
-                    justifyContent: 'flex-start',
-                    marginTop: 20,
-                    height: 60,
-                    gap: 10
-                }}
-                horizontal={true}
-                showsHorizontalScrollIndicator={false}
-            >
-                <View
+            <View style={{
+                flexDirection: 'row',
+            }}>
+                <ScrollView
                     style={{
-                        flexDirection: 'row',
-                        gap: 10,
-                        height: 42,
-                        justifyContent: 'flex-start',
-                        borderBottomColor: '#0066b2',
-                        borderBottomWidth: 2,
+                        maxHeight: 80
                     }}
+                    contentContainerStyle={{
+                        flexDirection: 'row',
+                        justifyContent: 'flex-start',
+                        marginTop: 20,
+                        height: 60,
+                        gap: 10,
+                        paddingHorizontal: 20
+                    }}
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
                 >
-                    {
-                        Object.keys(ChatData).map((key, index) => {
-                            return (
-                                <View
-                                    key={index}
-                                    style={{
-                                        backgroundColor: CurrentChatTab == key ? '#0066b2' : 'grey',
-                                        paddingHorizontal: 5,
-                                        paddingVertical: 5,
-                                        width: 80,
-                                        height: 40,
-                                        flexDirection: 'row',
-                                        justifyContent: 'space-between',
-                                        borderTopLeftRadius: 10,
-                                        borderTopRightRadius: 10,
-                                        rowGap: 10
-                                    }}
-                                >
-                                    <TouchableOpacity
-                                        onPress={() => dispatch(setCurrentChatTab(key))}
+                    <View
+                        style={{
+                            flexDirection: 'row',
+                            gap: 10,
+                            height: 42,
+                            justifyContent: 'flex-start',
+                            borderBottomColor: '#0066b2',
+                            borderBottomWidth: 2,
+                        }}
+                    >
+                        {
+                            Object.keys(ChatData).map((key, index) => {
+                                return (
+                                    <View
+                                        key={index}
                                         style={{
-                                            flex: 1
+                                            backgroundColor: CurrentChatTab == key ? '#0066b2' : 'grey',
+                                            paddingHorizontal: 5,
+                                            paddingVertical: 5,
+                                            minWidth: 80,
+                                            height: 40,
+                                            flexDirection: 'row',
+                                            justifyContent: 'space-between',
+                                            borderTopLeftRadius: 10,
+                                            borderTopRightRadius: 10,
+                                            rowGap: 10
                                         }}
                                     >
-                                        <Text
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                dispatch(setCurrentChatTab(key))
+                                                const latestChatData = chatDataRef.current;
+                                                const chatData = { ...latestChatData };
+                                                chatData[key] = { ...chatData[key], unseenMessages: 0 };
+                                                dispatch(setChatData(chatData));
+                                            }}
                                             style={{
-                                                color: 'white',
-                                                fontSize: 20,
-                                                fontWeight: 'bold',
+                                                flex: 1
                                             }}
                                         >
-                                            {CurrentChatTab == key ? `@(${key})` : key}
-                                        </Text>
-                                    </TouchableOpacity>
-                                    {Object.keys(ChatData).length > 1 &&
-                                        <TouchableOpacity
-                                            onPress={() => handleDeleteChatTab(key)}
-                                        >
-                                            <Image
+                                            <Text
                                                 style={{
-                                                    width: 24,
-                                                    height: 24,
-                                                    alignSelf: 'center'
+                                                    color: 'white',
+                                                    fontSize: 20,
+                                                    fontWeight: 'bold',
+                                                    textAlign: 'center'
                                                 }}
-                                                source={require('../assets/images/cancel_icon.png')}
-                                            />
+                                            >
+                                                {formatTabName(key)}
+                                            </Text>
                                         </TouchableOpacity>
-                                    }
-                                </View>
-                            )
-                        })
-                    }
-                </View>
+                                        {Object.keys(ChatData).length > 1 &&
+                                            <TouchableOpacity
+                                                onPress={() => handleDeleteChatTab(key)}
+                                            >
+                                                <Image
+                                                    style={{
+                                                        width: 24,
+                                                        height: 24,
+                                                        alignSelf: 'center'
+                                                    }}
+                                                    source={require('../assets/images/cancel_icon.png')}
+                                                />
+                                            </TouchableOpacity>
+                                        }
+                                    </View>
+                                )
+                            })
+                        }
+                    </View>
 
-                <TouchableOpacity
-                    onPress={handleAddChatTab}
-                    style={{
-                    }}
-                >
-                    <Image
+                    <TouchableOpacity
+                        onPress={handleAddChatTab}
                         style={{
-                            width: 36,
-                            height: 36,
-                            marginTop: 2,
-                            alignSelf: 'center'
                         }}
-                        source={require('../assets/images/plus_icon.png')}
-                    />
-                </TouchableOpacity>
-            </ScrollView>
+                    >
+                        <Image
+                            style={{
+                                width: 36,
+                                height: 36,
+                                marginTop: 2,
+                                alignSelf: 'center'
+                            }}
+                            source={require('../assets/images/plus_icon.png')}
+                        />
+                    </TouchableOpacity>
+                </ScrollView>
+                {ChatData[CurrentChatTab].receiverId !== null &&
+                    <TouchableOpacity
+                        onPress={openModal}
+                    >
+                        <Image
+                            source={require('../assets/images/options_icon.png')}
+                            style={{
+                                width: 36,
+                                height: 40,
+                                resizeMode: 'contain',
+                                marginTop: 20,
+                            }}
+                        />
+                    </TouchableOpacity>
+                }
+            </View>
             {Object.keys(ChatData).map((key, index) => {
                 return (
                     <View
@@ -308,6 +418,108 @@ export const ChatManager = ({ navigation, route }) => {
                 }}
                 popupLoader={confirmationPopupLoading}
             />
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={modalVisible}
+            >
+                <View
+                    style={{
+                        flex: 1,
+                        alignItems: 'center',
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)'
+                    }}>
+                    <View style={{
+                        borderWidth: 1,
+                        borderColor: 'white',
+                        borderRadius: 23.5,
+                        height: 250,
+                        width: 270,
+                        backgroundColor: '#211F1F',
+                        marginTop: 100,
+                        paddingHorizontal: 20
+                    }}>
+                        <Text
+                            style={{
+                                textAlign: 'center',
+                                fontSize: 18,
+                                fontWeight: 500,
+                                color: 'white',
+                                marginTop: 25
+                            }}
+                        >
+                            Report User
+                        </Text>
+                        <TouchableOpacity
+                            onPress={() => reportUser('Spam User')}
+                            style={{
+                                backgroundColor: '#051EFF',
+                                height: 45,
+                                paddingVertical: 10,
+                                marginTop: 20
+                            }}
+                        >
+                            <Text
+                                style={{
+                                    color: 'white',
+                                    fontSize: 18,
+                                    fontWeight: 500,
+                                    textAlign: 'center',
+                                }}>Spam User</Text>
+
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => reportUser('Abusive')}
+                            style={{
+                                backgroundColor: '#051EFF',
+                                height: 45,
+                                paddingVertical: 10,
+                                marginTop: 7
+                            }}
+                        >
+                            <Text
+                                style={{
+                                    color: 'white',
+                                    fontSize: 18,
+                                    fontWeight: 500,
+                                    textAlign: 'center',
+                                }}>Abusive</Text>
+
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => reportUser('Pornography')}
+                            style={{
+                                backgroundColor: '#051EFF',
+                                height: 45,
+                                paddingVertical: 10,
+                                marginTop: 7
+                            }}
+                        >
+                            <Text
+                                style={{
+                                    color: 'white',
+                                    fontSize: 18,
+                                    fontWeight: 500,
+                                    textAlign: 'center',
+                                }}>Pornography</Text>
+
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={closeModal}
+                            style={{
+                                position: 'absolute',
+                                top: 10,
+                                right: 15
+                            }}
+                        >
+                            <Text style={{
+                                fontSize: 24,
+                                color: 'white',
+                            }}>X</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </View>
     )
 };

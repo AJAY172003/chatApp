@@ -10,35 +10,41 @@ import {
   View,
 } from 'react-native';
 import { setChatData, setLastFIOffset } from '../redux/DataSlice';
-import Admob from './Admob';
+import { AdView } from '../screens/AdView';
 
 const FEMALE = "Female";
+const baseUrl = 'http://192.168.1.2:8000';
 
 function ChatScreen({ route, navigation, chatTab, supabase, userId, isLocked }) {
   const [messages, setMessages] = useState([]);
   const [receiverId, setReceiverId] = useState(null);
+  const [receiverData, setReceiverData] = useState(null);
   const [messageText, setMessageText] = useState('');
   const [isRequesting, setIsRequesting] = useState(false);
   const [isDisconnected, setIsDisconnected] = useState(false);
   const [initialOpening, setInitialOpening] = useState(true);
   const [noMatchFound, setNoMatchFound] = useState(false);
 
-  const { ChatData, CurrentChatTab, User, LastFIOffset } = useSelector(state => state.data);
+  const { ChatData, CurrentChatTab, User, LastFIOffset, RequiredFilters, IP } = useSelector(state => state.data);
   const chatDataRef = useRef(null);
+
   const dispatch = useDispatch();
 
   const handleChatRequest = async () => {
+
+    console.log("chat request called: ", userId);
     setIsDisconnected(false);
     setNoMatchFound(false);
     try {
-      const response = await axios.post('https://chatserver-arnv.onrender.com/user', {
+      const response = await axios.post(baseUrl + '/user', {
         userId: userId,
-        language: User.language,
-        country: User.country,
-        gender: User.gender,
-        email: User.email,
+        language: (User.Language),
+        country: (User.Country),
+        gender: (User.Gender),
+        email: (User.Email),
+        ip: IP,
         isFIRequired: LastFIOffset >= 3,
-        requiredFilters: {}
+        requiredFilters: RequiredFilters
       });
 
       if (response.data.user.gender === FEMALE) {
@@ -48,12 +54,24 @@ function ChatScreen({ route, navigation, chatTab, supabase, userId, isLocked }) 
         dispatch(setLastFIOffset(LastFIOffset + 1));
       }
 
+      setReceiverData({
+        country: response.data.user.country,
+        gender: response.data.user.gender,
+        requiredFilters: response.data.user.requiredFilters
+      });
+
       const latestChatData = chatDataRef.current;
       const matchedReceiverId = response.data.user.userId;
       const chatData = { ...latestChatData };
-      chatData[chatTab] = { receiverId: matchedReceiverId, messages: [] };
+      chatData[chatTab] = { receiverId: matchedReceiverId, messages: [], unseenMessages: 0 };
       dispatch(setChatData(chatData));
       setReceiverId(matchedReceiverId);
+
+      // check if user is premium user and is there any automessage configured
+      if (User.isPremium && User.premiumSettings?.autoMessage?.length != 0) {
+        sendMessage(User.premiumSettings?.autoMessage);
+      }
+
     } catch (error) {
       console.error('Error fetching data:', error);
       ToastAndroid.show('No Match found! Try after some time', ToastAndroid.SHORT);
@@ -81,19 +99,19 @@ function ChatScreen({ route, navigation, chatTab, supabase, userId, isLocked }) 
     }
   }, [ChatData]);
 
-  const sendMessage = async () => {
+  const sendMessage = async (message) => {
     while (isLocked);
     const randomId = uuid.v4();
-    if (!messageText.trim()) return;
+    if (!message.trim()) return;
     try {
       const latestChatData = chatDataRef.current;
       const { error } = await supabase
         .from('messages')
-        .insert([{ sender_id: userId, receiver_id: receiverId, message: messageText, messageId: randomId, created_at: new Date() }]);
+        .insert([{ sender_id: userId, receiver_id: receiverId, message: message, messageId: randomId, created_at: new Date() }]);
       if (error) throw error;
       console.log("chatdata before sending message: ", latestChatData);
-      setMessages(prevMessages => [...prevMessages, { text: messageText, belongs_to: true, messageId: randomId }]);
-      dispatch(setChatData({ ...latestChatData, [chatTab]: { ...latestChatData[chatTab], messages: [...latestChatData[chatTab].messages, { text: messageText, belongs_to: true, messageId: randomId }] } }));
+      setMessages(prevMessages => [...prevMessages, { text: message, belongs_to: true, messageId: randomId }]);
+      dispatch(setChatData({ ...latestChatData, [chatTab]: { ...latestChatData[chatTab], messages: [...latestChatData[chatTab].messages, { text: message, belongs_to: true, messageId: randomId }], unseenMessages: 0 } }));
       setMessageText('');
     } catch (error) {
       console.error('Error sending message:', error.message);
@@ -125,35 +143,54 @@ function ChatScreen({ route, navigation, chatTab, supabase, userId, isLocked }) 
     });
   };
 
-  const deleteMessagesForUser = async (userId) => {
-    const { error } = await supabase
-      .from('messages')
-      .delete()
-      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-    if (error) throw error;
-  }
-
   const handleSkip = async () => {
-    // delete entries from chat table where either user1 = userId and user2 = receiverId or user1 = receiverId and user2 = userId in a single query
-    const { error } = await supabase
-      .from('chat')
-      .delete()
-      .or(`and(user1.eq.${userId},user2.eq.${receiverId}),and(user2.eq.${userId},user1.eq.${receiverId})`)
-    if (error) throw error;
-
-    // delete entries from messages table where either sender_id = userId or receiver_id = userId in a single query
-    deleteMessagesForUser(userId);
+    await axios.post(baseUrl + '/skip', {
+      userId: userId,
+      receiverId: receiverId
+    });
+    setReceiverData(null);
     setIsDisconnected(true);
+    setIsRequesting(true);
   }
 
+  const formatHeaderInfo = () => {
+    if (receiverData) {
+      if (!RequiredFilters.country && !RequiredFilters.chatRoom && !RequiredFilters.likes.length) {
+        return 'You are now connected with a stranger';
+      }
+      else if (RequiredFilters.country) {
+        if (RequiredFilters.country == receiverData.country) {
+          return 'Stranger is from ' + RequiredFilters.country;
+        } else {
+          return `No Stranger available from ${RequiredFilters.country},\nconnected with random stranger`;
+        }
+      }
+      else if (RequiredFilters.chatRoom) {
+        if (RequiredFilters.chatRoom == receiverData.requiredFilters.chatRoom) {
+          return 'You both are talking about ' + RequiredFilters.chatRoom;
+        } else {
+          return `No Stranger available in ${RequiredFilters.chatRoom} Chatroom,\nconnected with random stranger`;
+        }
+      }
+      else if (RequiredFilters.likes.length) {
+        if (RequiredFilters.likes.some(r => receiverData.requiredFilters.likes.includes(r))) {
+          return 'Common likes - ' + RequiredFilters.likes.filter(r => receiverData.requiredFilters.likes.includes(r)).join(', ');
+        } else {
+          return 'Common likes - Not found,\nconnected with random stranger';
+        }
+      }
+    }
+    return '';
+  }
   return (
     <View
       style={{
         flex: 1,
         justifyContent: 'space-around',
-        backgroundColor: 'black',
+        backgroundColor: '#211F1F',
         flexDirection: 'column',
-        paddingBottom: 10
+        paddingBottom: 10,
+        paddingHorizontal: 20
       }}>
       {isRequesting ?
         <View >
@@ -172,28 +209,28 @@ function ChatScreen({ route, navigation, chatTab, supabase, userId, isLocked }) 
                 height: '90%',
               }}>
 
-              <Text
-                style={{
-                  color: 'white',
-                  fontSize: 14,
-                  textAlign: 'center',
-                  padding: 10,
-                  fontStyle: 'italic'
-                }}
-              >
-                {`You are talking with: `}
+              <View style={{
+                backgroundColor: '#051EFF',
+                minHeight: 45,
+                paddingVertical: 14,
+                paddingHorizontal: 15,
+                marginBottom: 10
+              }}>
                 <Text
                   style={{
-                    color: '#0066b2',
-                    fontWeight: 500
+                    color: 'white',
+                    fontSize: 12,
+                    lineHeight: 20
                   }}
-                >{receiverId}</Text>
-              </Text>
+                >
+                  {formatHeaderInfo()}
+                </Text>
+              </View>
 
               <FlatList
                 ref={flatListRef}
                 initialNumToRender={messages.length || 1}
-                style={{ backgroundColor: 'black', marginBottom: 10 }}
+                style={{ backgroundColor: '#211F1F', marginBottom: 10 }}
                 data={messages}
                 renderItem={({ item, index }) => (
                   <>
@@ -215,8 +252,6 @@ function ChatScreen({ route, navigation, chatTab, supabase, userId, isLocked }) 
                               paddingVertical: 10,
                               paddingHorizontal: 15,
                               borderRadius: 30,
-                              marginLeft: '20%',
-                              marginRight: 10,
                               marginTop: 5,
                               marginBottom: 10
                             }}> {parseTextWithLinks(item.text)}</Text>
@@ -255,7 +290,7 @@ function ChatScreen({ route, navigation, chatTab, supabase, userId, isLocked }) 
               justifyContent: 'flex-end',
               paddingBottom: 40
             }}>
-              <Admob />
+              {<AdView media={false}/>}
               <View>
                 <TouchableOpacity
                   onPress={() => {
@@ -288,6 +323,7 @@ function ChatScreen({ route, navigation, chatTab, supabase, userId, isLocked }) 
             <View
               style={{
                 flexDirection: 'row',
+                gap: 10
               }}>
               <TouchableOpacity
                 onPress={handleSkip}
@@ -297,7 +333,6 @@ function ChatScreen({ route, navigation, chatTab, supabase, userId, isLocked }) 
                   paddingVertical: 12,
                   height: 50,
                   width: 70,
-                  marginLeft: 10,
                 }}
               >
                 <Text
@@ -323,7 +358,7 @@ function ChatScreen({ route, navigation, chatTab, supabase, userId, isLocked }) 
                     alignItems: 'center',
                     backgroundColor: 'white',
                     borderRadius: 50,
-                    width: '90%',
+                    width: '100%',
                     justifyContent: 'center',
                     minHeight: 50
                   }}>
@@ -341,7 +376,7 @@ function ChatScreen({ route, navigation, chatTab, supabase, userId, isLocked }) 
                       multiline={true}
                     />
                   </View>
-                  <TouchableOpacity onPress={sendMessage}>
+                  <TouchableOpacity onPress={() => sendMessage(messageText)}>
                     <Send />
                   </TouchableOpacity>
                 </View>
@@ -357,7 +392,7 @@ function ChatScreen({ route, navigation, chatTab, supabase, userId, isLocked }) 
                   color: 'white',
                   padding: 10,
                 }}
-              >{isDisconnected ? "Stranger is Disconnected.": "No Match Found. Try again after sometime"}</Text>
+              >{isDisconnected ? "Stranger is Disconnected." : "No Match Found. Try again after sometime"}</Text>
             </View>}
         </>
       }
