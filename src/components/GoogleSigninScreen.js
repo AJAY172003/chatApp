@@ -1,17 +1,17 @@
-import {View, Text, TouchableOpacity, Button} from 'react-native';
-import {useEffect, useState} from 'react';
+import { View, Text, TouchableOpacity, Button } from 'react-native';
+import { useEffect, useState } from 'react';
 import Google from '../assets/images/google.svg';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   GoogleSignin,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import {createClient} from '@supabase/supabase-js';
-import {setUser} from '../redux/DataSlice';
+import { createClient } from '@supabase/supabase-js';
+import { setUser } from '../redux/DataSlice';
 
 function GoogleSigninScreen() {
   const dispatch = useDispatch();
-  const {User} = useSelector(state => state.data);
+  const { User } = useSelector(state => state.data);
   const supabase = createClient(
     'https://ninflipyamhqwcrfymmu.supabase.co',
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pbmZsaXB5YW1ocXdjcmZ5bW11Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQ1NTcwOTYsImV4cCI6MjAzMDEzMzA5Nn0.FBRmz0HOlsMUkMXzQiZTXxyLruKqygXjw17g0QuHhPU',
@@ -19,9 +19,9 @@ function GoogleSigninScreen() {
 
   const checkAndCreateUser = async (name, email) => {
     try {
-      const {error} = await supabase
+      const { error } = await supabase
         .from('users')
-        .insert([{email: email, name: name}]);
+        .insert([{ email: email, name: name }]);
       if (error) throw error;
     } catch (error) {
       console.error('User already exists: ', error.message);
@@ -42,7 +42,7 @@ function GoogleSigninScreen() {
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
 
-      dispatch(setUser({Email: userInfo.user.email, isLoggedIn: true}));
+      dispatch(setUser({ Email: userInfo.user.email, isLoggedIn: true }));
       checkAndCreateUser(userInfo.user.name, userInfo.user.email);
     } catch (error) {
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
@@ -61,7 +61,7 @@ function GoogleSigninScreen() {
     try {
       await GoogleSignin.revokeAccess();
       await GoogleSignin.signOut();
-      dispatch(setUser({Email: '', isLoggedIn: false}));
+      dispatch(setUser({ Email: '', isLoggedIn: false }));
     } catch (error) {
       console.error(error);
     }
@@ -74,7 +74,7 @@ function GoogleSigninScreen() {
         justifyContent: 'center',
         alignItems: 'center',
         width: '100%',
-        borderRadius: 20,
+        borderRadius: 10,
       }}>
       {User.Email?.length > 0 ? (
         <>
@@ -87,7 +87,7 @@ function GoogleSigninScreen() {
             }}>
             {User.Email}
           </Text>
-          <View style={{marginTop: 10}}>
+          <View style={{ marginTop: 10 }}>
             <Button title="sign out" onPress={signOut}></Button>
           </View>
         </>
@@ -95,14 +95,16 @@ function GoogleSigninScreen() {
         <>
           <Text
             style={{
-              fontWeight: 'bold',
-              fontSize: 13,
+              fontWeight: 500,
+              fontSize: 14,
               color: 'white',
               marginTop: 10,
             }}>
             Login or sign up to restore your subscription
           </Text>
-          <TouchableOpacity style={{width: '85%'}} onPress={signIn}>
+          <TouchableOpacity
+            style={{ width: '100%' }}
+            onPress={signIn}>
             <View
               style={{
                 display: 'flex',
@@ -110,12 +112,17 @@ function GoogleSigninScreen() {
                 justifyContent: 'center',
                 alignItems: 'center',
                 backgroundColor: '#051EFF',
-                height: 40,
+                height: 50,
                 borderRadius: 10,
                 marginTop: 10,
               }}>
-              <Google width={20} height={20} />
-              <Text style={{marginLeft: 10, color: 'white', fontWeight: 900}}>
+              <Google width={30} height={30} />
+              <Text style={{
+                marginLeft: 10,
+                color: 'white',
+                fontWeight: 700,
+                fontSize: 20
+              }}>
                 Login/SignUp
               </Text>
             </View>

@@ -10,13 +10,10 @@
       android:roundIcon="@mipmap/ic_launcher_round"
       android:allowBackup="false"
       android:theme="@style/AppTheme">
-          <!-- Sample AdMob app ID: ca-app-pub-3940256099942544~3347511713 -->
-    <!-- <meta-data
-        android:name="com.google.android.gms.ads.APPLICATION_ID"
-        android:value="ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy"/> -->
-       <meta-data
-        android:name="com.google.android.gms.ads.ca-app-pub-5213405198446794~6160485524"
-        android:value="ca-app-pub-5213405198446794~6160485524"/>
+
+      <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-5213405198446794~6160485524"/>
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"

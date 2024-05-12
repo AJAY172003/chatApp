@@ -8,6 +8,14 @@ const initialState = {
   LanguageFilter: null,
   LastFIOffset: 0,
   NumUserOnline: 0,
+  Reports: 0,
+  RequiredFilters: {
+    country: null,
+    chatRoom: null,
+    likes: []
+  },
+  isBlocked: false,
+  IP: '',
   User: {
     Name: '',
     Country: '',
@@ -65,6 +73,18 @@ const DataSlice = createSlice({
     },
     setLastFIOffset(state, { payload }) {
       state.LastFIOffset = payload;
+    },
+    setRequiredFilters(state, { payload }) {
+      state.RequiredFilters = { ...state.RequiredFilters, ...payload };
+    },
+    setIP(state, { payload }) {
+      state.IP = payload;
+    },
+    setReports(state, { payload }) {
+      state.Reports = payload;
+    },
+    setIsBlocked(state, { payload }) {  
+      state.isBlocked = payload;
     }
   },
 });
@@ -80,7 +100,11 @@ export const {
   setNumUserOnline,
   setChatData,
   setCurrentChatTab,
-  setLastFIOffset
+  setLastFIOffset,
+  setRequiredFilters,
+  setIP,
+  setReports,
+  setIsBlocked
 } = DataSlice.actions;
 
 export default DataSlice.reducer;

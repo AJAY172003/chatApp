@@ -1,6 +1,5 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import GoogleSigninScreen from '../components/GoogleSigninScreen';
-
 import {
   View,
   Text,
@@ -10,8 +9,9 @@ import {
   Animated,
   ScrollView,
   ToastAndroid,
+  Image,
 } from 'react-native';
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Profile from '../assets/images/profile.svg';
 import {
   setCountryFilter,
@@ -19,19 +19,19 @@ import {
   setSearchKey,
   setUser,
 } from '../redux/DataSlice';
-import {routes} from '../constants/routes';
-import {SelectList} from 'react-native-dropdown-select-list';
+import { routes } from '../constants/routes';
+import { SelectList } from 'react-native-dropdown-select-list';
 
 const genderData = [
-  {key: '1', value: 'Female'},
-  {key: '2', value: 'Male'},
-  {key: '3', value: 'Others'},
+  { key: '1', value: 'Female' },
+  { key: '2', value: 'Male' },
+  { key: '3', value: 'Others' },
 ];
 
 
-function Settings({navigation}) {
-  
-  const {CountryFilter, LanguageFilter, SearchKey, User} = useSelector(
+function Settings({ navigation }) {
+
+  const { CountryFilter, LanguageFilter, SearchKey, User } = useSelector(
     state => state.data,
   );
   const scrollViewRef = useRef();
@@ -50,7 +50,7 @@ function Settings({navigation}) {
   const [isOn, setIsOn] = useState(false);
   const [message, setMessage] = useState('');
   const [value, setValue] = useState('');
-  const[editable,setEditable]=useState(true)
+  const [editable, setEditable] = useState(true)
 
   const dispatch = useDispatch();
 
@@ -81,16 +81,13 @@ function Settings({navigation}) {
       Gender: gender,
       premiumSettings: {
         autoReconnect: isOn,
-        autoMessage: message,
+        autoMessage: message.trim(),
       },
     };
     dispatch(setUser(user));
   }, [country, language, gender, value, isOn, message]);
 
-  console.log('slideanim', slideAnim);
-
   const slideBox = () => {
-    console.log('slidebox :', slideAnim);
     if (User.isPremium) {
       Animated.timing(slideAnim, {
         toValue: 1,
@@ -115,45 +112,72 @@ function Settings({navigation}) {
     inputRange: [0, 1],
     outputRange: [30, 0],
   });
-  const onTextPress=()=>{
-    User.isPremium?setEditable(true):setEditable(false) 
-    if(!User.isPremium) ToastAndroid.show('Upgrade to Premium First', ToastAndroid.SHORT)
-    console.log('text pressed')
+  const onTextPress = () => {
+    User.isPremium ? setEditable(true) : setEditable(false)
+    if (!User.isPremium) ToastAndroid.show('Upgrade to Premium First', ToastAndroid.SHORT);
   }
 
   return (
-    <ScrollView  ref={scrollViewRef} style={{height: '100%', backgroundColor: '#211F1F'}}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      showsHorizontalScrollIndicator={false}
+      ref={scrollViewRef}
+      contentContainerStyle={{
+        paddingBottom: 30
+      }}
+      style={{
+        height: '100%',
+        backgroundColor: '#211F1F',
+        paddingHorizontal: 20
+      }}>
+      <TouchableOpacity
+        style={{
+          marginTop: 20
+        }}
+        onPress={() => navigation.goBack()}>
+        <Image
+          source={require('../assets/images/back_icon.png')}
+          style={{
+            width: 90,
+            height: 20
+          }}
+        />
+      </TouchableOpacity>
+      <Text
+        style={{
+          fontSize: 40,
+          fontWeight: '700',
+          color: 'white',
+          marginTop: 10
+        }}>
+        Setting
+      </Text>
       <View
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-around',
         }}>
-        <View style={{width: '80%'}}>
-          <Text style={{fontSize: 25, fontWeight: '700', color: 'white'}}>
-            Setting
-          </Text>
-        </View>
         <View
           style={{
-            borderWidth: 3,
+            borderWidth: 4,
             borderColor: 'white',
             width: 70,
+            height: 70,
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             padding: 10,
             marginTop: 20,
-            borderRadius: 50,
+            borderRadius: 35,
           }}>
           <Profile />
         </View>
         <GoogleSigninScreen />
         <View
           style={{
-            height: '75%',
-            paddingHorizontal: 10,
-            paddingVertical: 20,
+            marginTop: 30,
+            width: '100%'
           }}>
           <TextInput
             onChangeText={setValue}
@@ -162,7 +186,8 @@ function Settings({navigation}) {
               padding: 10,
               fontWeight: '700',
               color: 'white',
-              fontSize: 16,
+              height: 50,
+              fontSize: 20,
               backgroundColor: '#051EFF',
             }}
             placeholder="Name"
@@ -173,23 +198,24 @@ function Settings({navigation}) {
             setSelected={setGender}
             data={genderData}
             save="value"
-            dropdownStyles={{backgroundColor:'#212B7F',borderWidth:0}}
-            dropdownTextStyles={{color:'white'}}
+            dropdownStyles={{ backgroundColor: '#212B7F', borderWidth: 0 }}
+            dropdownTextStyles={{ color: 'white' }}
             search={false}
             maxHeight={120}
             boxStyles={{
               backgroundColor: '#051EFF',
               borderRadius: 0,
-              marginTop: 20,
+              marginTop: 15,
+              height: 50,
               borderWidth: 0,
               paddingHorizontal: 10,
             }}
             inputStyles={{
               fontWeight: 700,
               color: 'white',
-              fontSize: 16,
-              margin:0,
-             
+              fontSize: 20,
+              margin: 0,
+
             }}
             placeholder={gender.length ? gender : 'Select Gender'}
           />
@@ -210,8 +236,9 @@ function Settings({navigation}) {
                 style={{
                   fontWeight: '700',
                   color: 'white',
-                  fontSize: 16,
-                  marginTop: 20,
+                  fontSize: 20,
+                  height: 50,
+                  marginTop: 15,
                   backgroundColor: '#051EFF',
                   paddingHorizontal: 10,
                 }}
@@ -233,8 +260,9 @@ function Settings({navigation}) {
               style={{
                 fontWeight: '700',
                 color: 'white',
-                fontSize: 16,
-                marginTop: 20,
+                fontSize: 20,
+                height: 50,
+                marginTop: 15,
                 backgroundColor: '#051EFF',
                 paddingHorizontal: 10,
               }}
@@ -248,19 +276,18 @@ function Settings({navigation}) {
               padding: 10,
               marginTop: 20,
             }}>
-            <Text style={{color: 'white', fontSize: 20, fontWeight: 700}}>
+            <Text style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>
               Your message
             </Text>
             <TextInput
-              style={{fontSize: 14}}
-              placeholderTextColor={'grey'}
+              style={{ fontSize: 14 }}
+              placeholderTextColor={'white'}
               onPress={onTextPress}
               editable={editable}
               multiline={true}
-              
               value={message}
               onChangeText={setMessage}
-              placeholder={`Automatic message when you connect with ${'\n'} strangers`}></TextInput>
+              placeholder={`Automatic message when you connect with ${'\n'}strangers`}></TextInput>
           </View>
           <View
             style={{
@@ -272,7 +299,7 @@ function Settings({navigation}) {
               padding: 10,
               marginTop: 20,
             }}>
-            <Text style={{color: 'white', fontSize: 18, fontWeight: 700}}>
+            <Text style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>
               Automatic Reconnect
             </Text>
             <View style={styles.outerBox}>
@@ -282,38 +309,52 @@ function Settings({navigation}) {
                     styles.innerBox,
                     {
                       transform: [
-                        {translateX: left ? slideFromLeft : slideFromRight},
+                        { translateX: left ? slideFromLeft : slideFromRight },
                       ],
                     },
                   ]}>
-                  <Text style={{color: 'white'}}>{isOn ? 'On' : 'OFF'}</Text>
+                  <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>{isOn ? 'ON' : 'OFF'}</Text>
                 </Animated.View>
               </TouchableOpacity>
             </View>
           </View>
-        {  
-          User.isPremium?  <></>:
-        <TouchableOpacity color='white' onPress={()=>navigation.navigate(routes.PAYMENT_PROCESSING)}>
-          <View
-            style={{
-              backgroundColor: '#051EFF',
-              display: 'flex',
-              justifyContent: 'flex-start',
-              padding: 10,
-              marginTop: 20,
-            }}>
-            <Text style={{color: 'white', fontSize: 18, fontWeight: 700}}>
-              Get pro and only connect with females
-            </Text>
-            <View>
-              <Text style={{color: 'white', fontSize: 15}}>$20/Month</Text>
-            </View>
-          </View>
-          </TouchableOpacity>
-        
-        }
+          {
+            User.isPremium ? <></> :
+              <TouchableOpacity color='white' onPress={scrollToTop}>
+                <View
+                  style={{
+                    backgroundColor: '#051EFF',
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    paddingHorizontal: 10,
+                    marginTop: 50,
+                    paddingVertical: 15,
+                  }}>
+                  <Text style={{ color: 'white', fontSize: 32, fontWeight: 900, lineHeight: 40 }}>
+                    {`Get pro and only\nconnect with\nfemales`}
+                  </Text>
+                  <View style={{
+                    marginTop: 30,
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                  }}>
+                    <Text style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>$20/Month</Text>
+                    <Image 
+                      source={require('../assets/images/back_icon.png')}
+                      style={{
+                        width: 90,
+                        height: 20,
+                        marginRight: 20
+                      }}
+                      transform={[{ rotate: '180deg' }]}
+                    />
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+          }
         </View>
-        
+
       </View>
     </ScrollView>
   );
@@ -322,8 +363,8 @@ export default Settings;
 const styles = StyleSheet.create({
   outerBox: {
     width: 70,
-    height: 30,
-    backgroundColor: 'lightgray',
+    height: 35,
+    backgroundColor: 'black',
     justifyContent: 'center',
     alignItems: 'flex-start',
     display: 'flex',
@@ -335,6 +376,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     height: 35,
-    backgroundColor: 'black',
+    backgroundColor: '#1BA1E0',
   },
 });
