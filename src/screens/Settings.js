@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import GoogleSigninScreen from '../components/GoogleSigninScreen';
+
 import {
   View,
   Text,
@@ -292,7 +293,7 @@ function Settings({navigation}) {
           </View>
         {  
           User.isPremium?  <></>:
-        <TouchableOpacity color='white' onPress={scrollToTop}>
+        <TouchableOpacity color='white' onPress={()=>navigation.navigate(routes.PAYMENT_PROCESSING)}>
           <View
             style={{
               backgroundColor: '#051EFF',

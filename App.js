@@ -11,8 +11,9 @@ import store from "./src/redux/store";
 import { Provider, useDispatch } from 'react-redux';
 import { ChatManager } from "./src/screens/ChatManager";
 import { WelcomeScreen } from "./src/screens/WelcomeScreen";
-
-
+import SubscriptionPurchase from "./src/screens/SubscriptionPurchase";
+import PaymentProcessing from "./src/screens/PaymentProcessing";
+// import Admob from "./src/screens/Admob";
 const Stack = createNativeStackNavigator();
 function App() {
 
@@ -27,13 +28,16 @@ function App() {
             }
           }}
         >
-
+           
+           {/* <Stack.Screen name={routes.MYSCREEN} component={SubscriptionPurchase} /> */}
+           <Stack.Screen
+            name={routes.SETTINGS} component={Settings} />
+           <Stack.Screen name={routes.PAYMENT_PROCESSING} component={PaymentProcessing} />
           <Stack.Screen
             name={routes.WELCOMESCREEN} component={WelcomeScreen} />
           <Stack.Screen
             name={routes.FIRSTSCREEN} component={FirstScreen} />
-          <Stack.Screen
-            name={routes.SETTINGS} component={Settings} />
+     
           <Stack.Screen
             name={routes.HOMESCREEN} component={HomeScreen} />
           <Stack.Screen
