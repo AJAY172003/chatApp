@@ -28,7 +28,6 @@ const genderData = [
   { key: '3', value: 'Others' },
 ];
 
-
 function Settings({ navigation }) {
 
   const { CountryFilter, LanguageFilter, SearchKey, User } = useSelector(
@@ -42,26 +41,16 @@ function Settings({ navigation }) {
     }
   };
 
-  const [country, setCountry] = useState('');
-  const [language, setLanguage] = useState('');
-  const [gender, setGender] = useState('');
+  const [country, setCountry] = useState(User.Country);
+  const [language, setLanguage] = useState(User.Language);
+  const [gender, setGender] = useState(User.Gender);
   const [left, setLeft] = useState(!User.premiumSettings.autoReconnect);
   const [slideAnim, setSlideAnim] = useState(new Animated.Value(0));
-  const [isOn, setIsOn] = useState(false);
-  const [message, setMessage] = useState('');
-  const [value, setValue] = useState('');
-  const [editable, setEditable] = useState(true)
+  const [isOn, setIsOn] = useState(User.premiumSettings.autoReconnect);
+  const [message, setMessage] = useState(User.premiumSettings.autoMessage);
+  const [value, setValue] = useState(User.Name);
 
   const dispatch = useDispatch();
-
-  useEffect(() => {
-    setValue(User.Name);
-    setCountry(User.Country);
-    setLanguage(User.Language);
-    setGender(User.Gender);
-    setIsOn(User.premiumSettings.autoReconnect);
-    setMessage(User.premiumSettings.autoMessage);
-  }, []);
 
   useEffect(() => {
     if (SearchKey == 'country' && CountryFilter !== null) {
@@ -113,7 +102,6 @@ function Settings({ navigation }) {
     outputRange: [30, 0],
   });
   const onTextPress = () => {
-    User.isPremium ? setEditable(true) : setEditable(false)
     if (!User.isPremium) ToastAndroid.show('Upgrade to Premium First', ToastAndroid.SHORT);
   }
 
@@ -277,13 +265,13 @@ function Settings({ navigation }) {
               marginTop: 20,
             }}>
             <Text style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>
-              Your message
+              {`Your message ${User.isPremium ? '' : '(Premium feature)'}`}
             </Text>
             <TextInput
               style={{ fontSize: 14 }}
               placeholderTextColor={'white'}
               onPress={onTextPress}
-              editable={editable}
+              editable={User.isPremium}
               multiline={true}
               value={message}
               onChangeText={setMessage}
