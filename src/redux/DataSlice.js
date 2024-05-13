@@ -9,6 +9,7 @@ const initialState = {
   LastFIOffset: 0,
   NumUserOnline: 0,
   Reports: 0,
+  InfoPopupSeen: false,
   RequiredFilters: {
     country: null,
     chatRoom: null,
@@ -85,6 +86,10 @@ const DataSlice = createSlice({
     },
     setIsBlocked(state, { payload }) {  
       state.isBlocked = payload;
+    },
+    setInfoPopupSeen(state, { payload }) {
+      state.InfoPopupSeen = payload;
+      storeData('infoPopupSeen', payload);
     }
   },
 });
@@ -104,7 +109,8 @@ export const {
   setRequiredFilters,
   setIP,
   setReports,
-  setIsBlocked
+  setIsBlocked,
+  setInfoPopupSeen
 } = DataSlice.actions;
 
 export default DataSlice.reducer;

@@ -147,7 +147,8 @@ export const CommonLikes = ({ route, navigation }) => {
                                             1: {
                                                 receiverId: null,
                                                 messages: [],
-                                                unseenMessages: 0
+                                                unseenMessages: 0,
+                                                requestId: uuid.v4()
                                             }
                                         }));
                                         dispatch(setRequiredFilters({

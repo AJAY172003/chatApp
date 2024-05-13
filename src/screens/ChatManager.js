@@ -17,7 +17,7 @@ import ChatScreen from '../components/ChatScreen';
 import {ConfirmationPopup} from '../components/ConfirmationPopup';
 import BackgroundTimer from 'react-native-background-timer';
 import {supaClient} from '../utils/SupaClient';
-import { removeUsers, reportUser } from '../utils/api';
+import {removeRequest, removeUsers, reportUser, skipChat} from '../utils/api';
 
 const MAX_CHAT_TAB_LIMIT = 5;
 const HEARTBEAT_TIMER = 2000;
@@ -30,9 +30,7 @@ export const ChatManager = ({navigation, route}) => {
   const [isLocked, setIsLocked] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const {
-    userId = uuid.v4()
-  } = route.params;
+  const {userId = uuid.v4()} = route.params;
   const dispatch = useDispatch();
   const chatDataRef = useRef(null);
   const {ChatData, CurrentChatTab, IP} = useSelector(state => state.data);
@@ -58,7 +56,6 @@ export const ChatManager = ({navigation, route}) => {
     console.log('chatData: ', latestChatData);
     const senderId = payload.new.sender_id;
     const receiverId = payload.new.receiver_id;
-    console.log(receiverId, userId);
     if (receiverId == userId) {
       // check if senderId is in chatData
       if (
@@ -71,7 +68,6 @@ export const ChatManager = ({navigation, route}) => {
         let chatTabKey = Object.keys(tempChatData).find(
           key => tempChatData[key].receiverId == senderId,
         );
-        console.log(chatTabKey);
         tempChatData[chatTabKey] = {
           ...tempChatData[chatTabKey],
           messages: [
@@ -83,13 +79,11 @@ export const ChatManager = ({navigation, route}) => {
             },
           ],
           unseenMessages:
-            CurrentChatTab == chatTabKey
+            CurrentChatTab === chatTabKey
               ? 0
               : tempChatData[chatTabKey].unseenMessages + 1,
         };
         dispatch(setChatData(tempChatData));
-        console.log(tempChatData);
-        console.log('new msg is recieved from senderId: ', senderId);
       }
     }
     setIsLocked(false);
@@ -98,8 +92,6 @@ export const ChatManager = ({navigation, route}) => {
   // Create a function to handle deletes
   const handleDeletes = payload => {
     const latestChatData = chatDataRef.current;
-    console.log('Change received for delete in chat!', payload);
-    console.log('chatData: ', latestChatData);
     const user1 = payload.old.user1;
     const user2 = payload.old.user2;
 
@@ -118,7 +110,9 @@ export const ChatManager = ({navigation, route}) => {
           receiverId: null,
           messages: [],
           unseenMessages: 0,
+          requestId: uuid.v4(),
         };
+
         dispatch(setChatData(tempChatData));
         console.log(
           'chat is deleted with user1: ',
@@ -157,7 +151,6 @@ export const ChatManager = ({navigation, route}) => {
   };
 
   const handleBlocked = payload => {
-    console.log('You have been bocked........................................');
     dispatch(setIsBlocked(true));
     handleBack();
   };
@@ -181,13 +174,11 @@ export const ChatManager = ({navigation, route}) => {
   useEffect(() => {
     const subscription = AppState.addEventListener('change', nextAppState => {
       if (nextAppState.match(/inactive|background/)) {
-        console.log('state is in background');
         BackgroundTimer.runBackgroundTimer(() => {
           pingServer();
         }, HEARTBEAT_TIMER);
         //rest of code will be performing for iOS on background too
       } else {
-        console.log('state is in foreground');
         BackgroundTimer.stopBackgroundTimer();
       }
     });
@@ -259,6 +250,7 @@ export const ChatManager = ({navigation, route}) => {
         messages: [],
         receiverId: null,
         unseenMessages: 0,
+        requestId: uuid.v4(),
       };
       dispatch(setChatData(tempChatData));
       dispatch(setCurrentChatTab(newChatTab));
@@ -267,7 +259,15 @@ export const ChatManager = ({navigation, route}) => {
 
   const handleDeleteChatTab = chatTabToDelete => {
     let tempChatData = {...ChatData};
-    removeUsersFunc(userId, [tempChatData[chatTabToDelete].receiverId]);
+    if (tempChatData[chatTabToDelete].receiverId !== null) {
+      skipChat({userId, receiverId: tempChatData[chatTabToDelete].receiverId});
+    }
+    else {
+      console.log(tempChatData[chatTabToDelete])
+      removeRequest({userId, requestId: tempChatData[chatTabToDelete].requestId});
+    }
+    
+    chatDataRef.current = tempChatData;
     delete tempChatData[chatTabToDelete];
     dispatch(setChatData(tempChatData));
     if (CurrentChatTab == chatTabToDelete) {
@@ -284,7 +284,7 @@ export const ChatManager = ({navigation, route}) => {
           receiverId: ChatData[CurrentChatTab].receiverId,
           reason: reason,
         });
-        removeUsers(userId, [ChatData[CurrentChatTab].receiverId]);
+        skipChat({userId, receiverId: ChatData[CurrentChatTab].receiverId});
         ToastAndroid.show('Stranger has been reported', ToastAndroid.SHORT);
       } catch (e) {
         console.log(e);
@@ -427,11 +427,7 @@ export const ChatManager = ({navigation, route}) => {
               flexDirection: 'column',
             }}
             key={index}>
-            <ChatScreen
-              chatTab={key}
-              userId={userId}
-              isLocked={isLocked}
-            />
+            <ChatScreen chatTab={key} userId={userId} isLocked={isLocked} />
           </View>
         );
       })}

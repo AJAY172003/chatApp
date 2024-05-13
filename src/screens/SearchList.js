@@ -33,8 +33,9 @@ export const SearchList = ({ navigation }) => {
     }
 
     const filterItems = (text) => {
+        const originalSearchList = SearchKey == 'country' ? countries : languages;
         setSearchValue(text);
-        const filteredItems = items.filter((item) => {
+        const filteredItems = originalSearchList.filter((item) => {
             return item.toLowerCase().includes(text.toLowerCase());
         });
         setItems(filteredItems);

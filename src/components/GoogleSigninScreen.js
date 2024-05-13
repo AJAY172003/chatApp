@@ -27,6 +27,9 @@ function GoogleSigninScreen() {
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
 
+
+      // TODO: fetch subscription status from server and update the user state
+      
       dispatch(setUser({ Email: userInfo.user.email, isLoggedIn: true }));
       checkAndCreateUser(userInfo.user.name, userInfo.user.email);
     } catch (error) {

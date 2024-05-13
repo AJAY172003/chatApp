@@ -1,6 +1,6 @@
 import { ActivityIndicator, ImageBackground } from 'react-native';
 import { getData } from '../utils/storage';
-import { setIP, setIsBlocked, setNumUserOnline, setReports, setUser } from '../redux/DataSlice';
+import { setIP, setInfoPopupSeen, setIsBlocked, setNumUserOnline, setReports, setUser } from '../redux/DataSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { routes } from '../constants/routes';
@@ -9,7 +9,6 @@ import publicIP from 'react-native-public-ip';
 import { StackActions } from '@react-navigation/native';
 import { getOnlineUsers, getUserDailyReports } from '../utils/api';
 import { GOOGLE_SIGIN_WEB_CLIENT_ID } from '../utils/creds';
-import { getUserByEmail } from '../utils/SupaClient';
 
 const MAX_REPORTS = 10;
 export const WelcomeScreen = ({ navigation }) => {
@@ -80,7 +79,7 @@ export const WelcomeScreen = ({ navigation }) => {
           // update premium status accordingly
 
           
-          data = { ...data, Email: email, isPremium: false };
+          data = { ...data, Email: email, isPremium: true };
         }
 
         if (!data.isPremium) {
@@ -99,6 +98,10 @@ export const WelcomeScreen = ({ navigation }) => {
         setHasDataLoaded(true);
       }
     });
+    getData('infoPopupSeen').then(data => {
+      dispatch(setInfoPopupSeen((data == null || data == false) ? false : true));
+    });
+
   }, []);
 
   useEffect(() => {

@@ -4,7 +4,7 @@ import axios from 'axios';
 
 const baseMatchingUrls = {
   dev: 'http://192.168.1.6:8000',
-  prod: 'https://api.myapp.com',
+  prod: 'http://139.84.136.173',
 };
 
 const basePaymentUrls = {
@@ -21,7 +21,8 @@ export const matchingUrls = {
   COUNTRIES: '/countries',
   REPORT_USER: '/reportUser',
   REMOVE_USERS: '/removeUsers',
-  SKIP_CHAT: '/skip',
+  SKIP_CHAT: '/removeChat',
+  REMOVE_REQUEST: '/removeRequest',
 };
 
 export const paymentUrls = {
@@ -89,6 +90,13 @@ export const sendChatRequest = async data => {
 export const skipChat = async data => {
   return axios.post(
     `${baseMatchingUrls[currentMatchingSystem]}${matchingUrls.SKIP_CHAT}`,
+    data,
+  );
+};
+
+export const removeRequest = async data => {
+  return axios.post(
+    `${baseMatchingUrls[currentMatchingSystem]}${matchingUrls.REMOVE_REQUEST}`,
     data,
   );
 };

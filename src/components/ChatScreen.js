@@ -15,7 +15,7 @@ import uuid from 'react-native-uuid';
 import {Text, View} from 'react-native';
 import {setChatData, setLastFIOffset} from '../redux/DataSlice';
 import {AdView} from '../screens/AdView';
-import {insertChat, insertMessage, insertUser, supaClient} from '../utils/SupaClient';
+import {insertMessage} from '../utils/SupaClient';
 import {sendChatRequest, skipChat} from '../utils/api';
 
 const FEMALE = 'Female';
@@ -37,7 +37,7 @@ function ChatScreen({ chatTab, userId, isLocked}) {
   const dispatch = useDispatch();
 
   const handleChatRequest = async () => {
-    console.log('chat request called: ', userId);
+    console.log("Requesting chat for tab: ", chatTab)
     setIsDisconnected(false);
     setNoMatchFound(false);
     try {
@@ -50,6 +50,7 @@ function ChatScreen({ chatTab, userId, isLocked}) {
         ip: IP,
         isFIRequired: LastFIOffset >= 3,
         requiredFilters: RequiredFilters,
+        requestId: chatDataRef.current[chatTab]?.requestId,
       });
 
       if (response.data.user.gender === FEMALE) {
@@ -66,11 +67,13 @@ function ChatScreen({ chatTab, userId, isLocked}) {
 
       const latestChatData = chatDataRef.current;
       const matchedReceiverId = response.data.user.userId;
+      const requestId = response.data.user.requestId;
       const chatData = {...latestChatData};
       chatData[chatTab] = {
         receiverId: matchedReceiverId,
         messages: [],
         unseenMessages: 0,
+        requestId: requestId,
       };
       dispatch(setChatData(chatData));
       setReceiverId(matchedReceiverId);
@@ -81,10 +84,10 @@ function ChatScreen({ chatTab, userId, isLocked}) {
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      ToastAndroid.show(
-        'No Match found! Try after some time',
-        ToastAndroid.SHORT,
-      );
+      // ToastAndroid.show(
+      //   'No Match found! Try after some time',
+      //   ToastAndroid.SHORT,
+      // );
       setNoMatchFound(true);
     }
     setIsRequesting(false);
@@ -95,7 +98,6 @@ function ChatScreen({ chatTab, userId, isLocked}) {
     if (chatTab) {
       setMessages(ChatData[chatTab]?.messages);
       setReceiverId(ChatData[chatTab]?.receiverId);
-
       if (ChatData[chatTab]?.receiverId == null && isRequesting === false) {
         if (
           (User.isPremium && User.premiumSettings.autoReconnect) ||
@@ -126,7 +128,6 @@ function ChatScreen({ chatTab, userId, isLocked}) {
         created_at: new Date(),
       });
 
-      console.log('chatdata before sending message: ', latestChatData);
       setMessages(prevMessages => [
         ...prevMessages,
         {text: message, belongs_to: true, messageId: randomId},
@@ -190,10 +191,9 @@ function ChatScreen({ chatTab, userId, isLocked}) {
       userId: userId,
       receiverId: receiverId,
     });
-
+    setInitialOpening(true);
     setReceiverData(null);
     setIsDisconnected(true);
-    setIsRequesting(true);
   };
 
   const formatHeaderInfo = () => {
