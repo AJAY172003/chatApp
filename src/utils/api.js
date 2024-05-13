@@ -1,5 +1,5 @@
-const currentMatchingSystem = 'dev';
-const currentPaymentSystem = 'dev';
+const currentMatchingSystem = 'prod';
+const currentPaymentSystem = 'prod';
 import axios from 'axios';
 
 const baseMatchingUrls = {
@@ -9,7 +9,7 @@ const baseMatchingUrls = {
 
 const basePaymentUrls = {
   dev: 'http://192.168.1.6:3000',
-  prod: 'https://api.myapp.com',
+  prod: 'http://139.84.143.221',
 };
 
 export const matchingUrls = {
