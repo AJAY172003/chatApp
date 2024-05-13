@@ -7,7 +7,7 @@ import { routes } from '../constants/routes';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import publicIP from 'react-native-public-ip';
 import { StackActions } from '@react-navigation/native';
-import { getOnlineUsers, getUserDailyReports } from '../utils/api';
+import { getOnlineUsers, getSubscriptionStatus, getUserDailyReports } from '../utils/api';
 import { GOOGLE_SIGIN_WEB_CLIENT_ID } from '../utils/creds';
 
 const MAX_REPORTS = 10;
@@ -77,9 +77,9 @@ export const WelcomeScreen = ({ navigation }) => {
 
           // TODO: check if subscription for user with email is active from payment server
           // update premium status accordingly
-
+          const response = await getSubscriptionStatus({email});
           
-          data = { ...data, Email: email, isPremium: true };
+          data = { ...data, Email: email, isPremium: response?.data?.premium_status };
         }
 
         if (!data.isPremium) {

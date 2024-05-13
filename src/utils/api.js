@@ -27,6 +27,7 @@ export const matchingUrls = {
 
 export const paymentUrls = {
   VERIFY_PAYMENT: '/payment',
+  SUBSCRIPTION_STATUS: '/subscriptionStatus'
 };
 
 export const getOnlineUsers = async () => {
@@ -107,3 +108,10 @@ export const verifyPayment = async data => {
     data,
   );
 };
+
+export const getSubscriptionStatus = async data => {
+  return axios.post(
+    `${basePaymentUrls[currentPaymentSystem]}${paymentUrls.SUBSCRIPTION_STATUS}`,
+    data
+  );
+}
