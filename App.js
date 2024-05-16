@@ -8,7 +8,7 @@ import FirstScreen from './src/screens/FirstScreen';
 import {routes} from './src/constants/routes';
 import {SearchList} from './src/screens/SearchList';
 import store from './src/redux/store';
-import {Provider, useDispatch} from 'react-redux';
+import {Provider} from 'react-redux';
 import {ChatManager} from './src/screens/ChatManager';
 import {WelcomeScreen} from './src/screens/WelcomeScreen';
 import PaymentProcessing from './src/screens/PaymentProcessing';
@@ -17,8 +17,11 @@ import {ChatRoom} from './src/screens/ChatRoom';
 import {CommonLikes} from './src/screens/CommonLikes';
 import {AccountHealth} from './src/screens/AccountHealth';
 import {AdManager} from 'react-native-admob-native-ads';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {StatusBar} from 'react-native';
 
 const Stack = createNativeStackNavigator();
+
 function App() {
   AdManager.setRequestConfiguration({
     testDeviceIds: ['YOUR_TEST_DEVICE_ID'],
@@ -30,37 +33,45 @@ function App() {
   });
 
   return (
-    <Provider store={store}>
-      <NavigationContainer>
-        <Stack.Navigator
-          screenOptions={{
-            headerShown: false,
-            headerStyle: {
-              backgroundColor: '#0000000',
-            },
-          }}>
-             <Stack.Screen name={routes.WELCOMESCREEN} component={WelcomeScreen} />
+    <SafeAreaView style={{flex: 1}}>
+      <StatusBar animated={true} backgroundColor="#211F1F" />
+      <Provider store={store}>
+        <NavigationContainer>
+          <Stack.Navigator
+            screenOptions={{
+              headerShown: false,
+              headerStyle: {
+                backgroundColor: '#0000000',
+              },
+            }}>
+            <Stack.Screen
+              name={routes.WELCOMESCREEN}
+              component={WelcomeScreen}
+            />
             <Stack.Screen name={routes.SETTINGS} component={Settings} />
-           
-          
-          <Stack.Screen
-            name={routes.PAYMENT_PROCESSING}
-            component={PaymentProcessing}
-          />
-          
-          <Stack.Screen name={routes.FIRSTSCREEN} component={FirstScreen} />
 
-          <Stack.Screen name={routes.HOMESCREEN} component={HomeScreen} />
-          <Stack.Screen name={routes.COUNTRYCHAT} component={CountryChat} />
-          <Stack.Screen name={routes.CHATROOM} component={ChatRoom} />
-          <Stack.Screen name={routes.COMMONLIKES} component={CommonLikes} />
-          <Stack.Screen name={routes.ACCOUNTHEALTH} component={AccountHealth} />
-          <Stack.Screen name={routes.CHATMANAGER} component={ChatManager} />
-          <Stack.Screen name={routes.CHATSCREEN} component={ChatScreen} />
-          <Stack.Screen name={routes.SEARCHLIST} component={SearchList} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </Provider>
+            <Stack.Screen
+              name={routes.PAYMENT_PROCESSING}
+              component={PaymentProcessing}
+            />
+
+            <Stack.Screen name={routes.FIRSTSCREEN} component={FirstScreen} />
+
+            <Stack.Screen name={routes.HOMESCREEN} component={HomeScreen} />
+            <Stack.Screen name={routes.COUNTRYCHAT} component={CountryChat} />
+            <Stack.Screen name={routes.CHATROOM} component={ChatRoom} />
+            <Stack.Screen name={routes.COMMONLIKES} component={CommonLikes} />
+            <Stack.Screen
+              name={routes.ACCOUNTHEALTH}
+              component={AccountHealth}
+            />
+            <Stack.Screen name={routes.CHATMANAGER} component={ChatManager} />
+            <Stack.Screen name={routes.CHATSCREEN} component={ChatScreen} />
+            <Stack.Screen name={routes.SEARCHLIST} component={SearchList} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </Provider>
+    </SafeAreaView>
   );
 }
 export default App;

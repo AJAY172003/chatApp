@@ -9,6 +9,7 @@ const initialState = {
   LastFIOffset: 0,
   NumUserOnline: 0,
   Reports: 0,
+  isTabSwitched: false,
   InfoPopupSeen: false,
   RequiredFilters: {
     country: null,
@@ -95,6 +96,7 @@ const DataSlice = createSlice({
 });
 
 export const {
+ 
   setIsLoggedIn,
   setIsPremium,
   setSearchKey,

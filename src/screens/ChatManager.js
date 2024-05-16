@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import uuid from 'react-native-uuid';
 import {useDispatch, useSelector} from 'react-redux';
-import {setChatData, setCurrentChatTab, setIsBlocked} from '../redux/DataSlice';
+import {setChatData, setCurrentChatTab, setIsBlocked, setisTabSwitched} from '../redux/DataSlice';
 import {useEffect, useRef, useState} from 'react';
 import ChatScreen from '../components/ChatScreen';
 import {ConfirmationPopup} from '../components/ConfirmationPopup';
@@ -103,6 +103,10 @@ export const ChatManager = ({navigation, route}) => {
       );
 
       if (chatTabKey !== undefined) {
+
+        if(chatTabKey == CurrentChatTab) {
+          setModalVisible(false);
+        }
         let tempChatData = {...latestChatData};
 
         // set receivedId to null and messages to empty array
@@ -205,7 +209,7 @@ export const ChatManager = ({navigation, route}) => {
         )
         .on(
           'postgres_changes',
-          {event: 'INSERT', schema: 'public', table: 'blocked'},
+          {event: 'INSERT', schema: 'public', table: 'blocked', filter: `ip=eq.${IP}`},
           handleBlocked,
         )
         .subscribe();
@@ -261,12 +265,14 @@ export const ChatManager = ({navigation, route}) => {
     let tempChatData = {...ChatData};
     if (tempChatData[chatTabToDelete].receiverId !== null) {
       skipChat({userId, receiverId: tempChatData[chatTabToDelete].receiverId});
+    } else {
+      console.log(tempChatData[chatTabToDelete]);
+      removeRequest({
+        userId,
+        requestId: tempChatData[chatTabToDelete].requestId,
+      });
     }
-    else {
-      console.log(tempChatData[chatTabToDelete])
-      removeRequest({userId, requestId: tempChatData[chatTabToDelete].requestId});
-    }
-    
+
     chatDataRef.current = tempChatData;
     delete tempChatData[chatTabToDelete];
     dispatch(setChatData(tempChatData));
@@ -334,7 +340,7 @@ export const ChatManager = ({navigation, route}) => {
               gap: 10,
               height: 42,
               justifyContent: 'flex-start',
-              borderBottomColor: '#0066b2',
+              borderBottomColor: '#051EFF',
               borderBottomWidth: 2,
             }}>
             {Object.keys(ChatData).map((key, index) => {
@@ -342,7 +348,7 @@ export const ChatManager = ({navigation, route}) => {
                 <View
                   key={index}
                   style={{
-                    backgroundColor: CurrentChatTab == key ? '#0066b2' : 'grey',
+                    backgroundColor: CurrentChatTab == key ? '#051EFF' : 'grey',
                     paddingHorizontal: 5,
                     paddingVertical: 5,
                     minWidth: 80,
@@ -433,7 +439,7 @@ export const ChatManager = ({navigation, route}) => {
       })}
       <ConfirmationPopup
         isVisible={confirmationPopupVisible}
-        title={`Are you sure you want to exit the chat? \n\nAll of your current chats will get disconnected`}
+        title={`Are you sure you want to exit the chat? all windows will be closed`}
         positiveLabel="YES"
         positiveCallback={handleBack}
         negativeLabel="NO"
@@ -447,84 +453,29 @@ export const ChatManager = ({navigation, route}) => {
           style={{
             flex: 1,
             alignItems: 'center',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
           }}>
           <View
             style={{
               borderWidth: 1,
               borderColor: 'white',
               borderRadius: 23.5,
-              height: 250,
-              width: 270,
+              width: 260,
               backgroundColor: '#211F1F',
               marginTop: 100,
-              paddingHorizontal: 20,
+              paddingBottom: 30,
             }}>
-            <Text
+            <Image
+              source={require('../assets/images/report_popup.jpg')}
               style={{
-                textAlign: 'center',
-                fontSize: 18,
-                fontWeight: 500,
-                color: 'white',
-                marginTop: 25,
-              }}>
-              Report User
-            </Text>
-            <TouchableOpacity
-              onPress={() => reportUserFunc('Spam User')}
-              style={{
-                backgroundColor: '#051EFF',
-                height: 45,
-                paddingVertical: 10,
-                marginTop: 20,
-              }}>
-              <Text
-                style={{
-                  color: 'white',
-                  fontSize: 18,
-                  fontWeight: 500,
-                  textAlign: 'center',
-                }}>
-                Spam User
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => reportUserFunc('Abusive')}
-              style={{
-                backgroundColor: '#051EFF',
-                height: 45,
-                paddingVertical: 10,
-                marginTop: 7,
-              }}>
-              <Text
-                style={{
-                  color: 'white',
-                  fontSize: 18,
-                  fontWeight: 500,
-                  textAlign: 'center',
-                }}>
-                Abusive
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => reportUserFunc('Pornography')}
-              style={{
-                backgroundColor: '#051EFF',
-                height: 45,
-                paddingVertical: 10,
-                marginTop: 7,
-              }}>
-              <Text
-                style={{
-                  color: 'white',
-                  fontSize: 18,
-                  fontWeight: 500,
-                  textAlign: 'center',
-                }}>
-                Pornography
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+                height: 204,
+                width: 260,
+                resizeMode: 'cover',
+                borderTopLeftRadius: 23.5,
+                borderTopRightRadius: 23.5
+              }}
+            />
+             <TouchableOpacity
               onPress={closeModal}
               style={{
                 position: 'absolute',
@@ -534,11 +485,84 @@ export const ChatManager = ({navigation, route}) => {
               <Text
                 style={{
                   fontSize: 24,
-                  color: 'white',
+                  color: '#051EFF',
+                  fontWeight: 700,
                 }}>
                 X
               </Text>
             </TouchableOpacity>
+            <View>
+              <Text
+                style={{
+                  position: 'absolute',
+                  fontSize: 18,
+                  fontWeight: 500,
+                  color: 'white',
+                  alignSelf: 'center',
+                  top: -30,
+                }}>
+                Report User
+              </Text>
+              <View
+                style={{
+                  paddingHorizontal: 20,
+                }}>
+                <TouchableOpacity
+                  onPress={() => reportUserFunc('Spam User')}
+                  style={{
+                    backgroundColor: '#051EFF',
+                    height: 45,
+                    paddingVertical: 10,
+                    marginTop: 20,
+                  }}>
+                  <Text
+                    style={{
+                      color: 'white',
+                      fontSize: 18,
+                      fontWeight: 500,
+                      textAlign: 'center',
+                    }}>
+                    Spam User
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => reportUserFunc('Abusive')}
+                  style={{
+                    backgroundColor: '#051EFF',
+                    height: 45,
+                    paddingVertical: 10,
+                    marginTop: 7,
+                  }}>
+                  <Text
+                    style={{
+                      color: 'white',
+                      fontSize: 18,
+                      fontWeight: 500,
+                      textAlign: 'center',
+                    }}>
+                    Abusive
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => reportUserFunc('Pornography')}
+                  style={{
+                    backgroundColor: '#051EFF',
+                    height: 45,
+                    paddingVertical: 10,
+                    marginTop: 7,
+                  }}>
+                  <Text
+                    style={{
+                      color: 'white',
+                      fontSize: 18,
+                      fontWeight: 500,
+                      textAlign: 'center',
+                    }}>
+                    Pornography
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </View>
       </Modal>

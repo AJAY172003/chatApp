@@ -260,6 +260,11 @@ function ChatScreen({ chatTab, userId, isLocked}) {
         <>
           {!isDisconnected && !noMatchFound ? (
             <View
+           onLayout={() => {
+            setTimeout(() => {
+              flatListRef.current.scrollToEnd({animated: true})
+            }, 0);
+          }}
               style={{
                 height: '90%',
               }}>
@@ -282,6 +287,7 @@ function ChatScreen({ chatTab, userId, isLocked}) {
               </View>
 
               <FlatList
+            
                 showsVerticalScrollIndicator={false}
                 showsHorizontalScrollIndicator={false}
                 ref={flatListRef}
@@ -303,7 +309,7 @@ function ChatScreen({ chatTab, userId, isLocked}) {
                             color: 'white',
                             fontSize: 14,
                             flexWrap: 'wrap', // Allow text to wrap if it exceeds the available width
-                            backgroundColor: '#62259F',
+                            backgroundColor: '#0066b2',
                             paddingVertical: 10,
                             paddingHorizontal: 15,
                             borderRadius: 30,
@@ -327,7 +333,7 @@ function ChatScreen({ chatTab, userId, isLocked}) {
                             color: 'white',
                             fontSize: 14,
                             flexWrap: 'wrap', // Allow text to wrap if it exceeds the available width
-                            backgroundColor: '#0066b2',
+                            backgroundColor: '#606060',
                             paddingVertical: 10,
                             paddingHorizontal: 15,
                             borderRadius: 30,

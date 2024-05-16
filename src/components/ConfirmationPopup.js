@@ -1,4 +1,4 @@
-import { Modal, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Image, Modal, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Text } from "react-native";
 import { ActivityIndicator } from "react-native";
 
@@ -25,16 +25,29 @@ export const ConfirmationPopup = ({
                     flex: 1,
                     justifyContent: 'center',
                     alignItems: 'center',
-                    backgroundColor: '#00000080',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
                 }}>
                 <View style={styles.popupContainer}>
+                    <Image 
+                        source={require('../assets/images/exit_popup.jpg')}
+                        style={{
+                            width: 256,
+                            height: 170,
+                            alignSelf: 'center',
+                            marginBottom: 20,
+                            borderTopLeftRadius: 20,
+                            borderTopRightRadius: 20,
+                            marginLeft: 2,
+                            marginRight: 2,
+                        }}
+                    />
                     <Text style={styles.title}>{title}</Text>
                     <View style={[{...styles.buttonBlock}, {justifyContent: singleOption ? 'flex-end' : 'space-between'}]}>
-                        {!singleOption && <TouchableOpacity style={[{...styles.button}, {backgroundColor: '#c04000'}]} onPress={() => negativeCallback(...negativeCallbackParams)}>
+                        {!singleOption && <TouchableOpacity style={[{...styles.button}, {backgroundColor: '#051EFF'}]} onPress={() => negativeCallback(...negativeCallbackParams)}>
                             <Text style={styles.buttonLabel}>{negativeLabel}</Text>
                         </TouchableOpacity>
                         }
-                        <TouchableOpacity style={[{...styles.button}, {backgroundColor: '#228b22'}]} onPress={() => positiveCallback(...positiveCallbackParams)}>
+                        <TouchableOpacity style={[{...styles.button}, {backgroundColor: '#626367'}]} onPress={() => positiveCallback(...positiveCallbackParams)}>
                             {popupLoader ? 
                                 <ActivityIndicator size="small" color="white" />
                             : <Text style={styles.buttonLabel}>{positiveLabel}</Text>}
@@ -48,13 +61,17 @@ export const ConfirmationPopup = ({
 
 const styles = StyleSheet.create({
     popupContainer: {
-        width: 300,
-        backgroundColor: '#0066b2',
-        borderRadius: 10,
-        padding: 20,
+        width: 260,
+        backgroundColor: '#211F1F',
+        borderRadius: 23,
+        paddingHorizontal: 20,
+        paddingBottom: 30,
+        borderWidth: 2,
+        borderColor: 'white',
     },
     title: {
         fontSize: 16,
+        textAlign: 'center',
         fontWeight: 'bold',
         color: 'white',
     },
@@ -65,13 +82,13 @@ const styles = StyleSheet.create({
     },
     button: {
         paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 5,
+        paddingHorizontal: 30,
         fontWeight: 'bold',
     },
     buttonLabel: {
         fontSize: 16,
         fontWeight: 'bold',
-        color: 'white'
+        color: 'white',
+        paddingVertical: 2
     }
 });

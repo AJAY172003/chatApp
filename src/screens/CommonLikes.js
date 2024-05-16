@@ -107,7 +107,7 @@ export const CommonLikes = ({ route, navigation }) => {
                                                 fontSize: 24,
                                                 fontWeight: 700,
                                             }}
-                                        >Add your interests</Text>
+                                        >Add your interests<Text style={{fontSize:15,fontWeight:500}}>{`${'\n'}(Choose from below)`}</Text></Text>
                                         :
                                         <>
                                             {selectedLikes.map((like, index) => {
@@ -165,10 +165,12 @@ export const CommonLikes = ({ route, navigation }) => {
                                         style={{
                                             backgroundColor: selectedLikes.length == 0 ? '#212B7F' : '#051EFF',
                                             flexDirection: 'row',
-                                            justifyContent: 'flex-end',
+                                            justifyContent: 'space-between',
                                             marginTop: 20,
+
                                             height: 55
                                         }}>
+                                            <Text style={{alignSelf:'center',paddingLeft:15,color:'white',fontSize:20,fontWeight:'bold'}}>Start chat</Text>
                                         <Image
                                             source={require('../assets/images/arrow_icon.png')}
                                             style={{

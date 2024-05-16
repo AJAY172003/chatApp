@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import GoogleSigninScreen from '../components/GoogleSigninScreen';
 import {
   View,
@@ -11,7 +11,7 @@ import {
   ToastAndroid,
   Image,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import Profile from '../assets/images/profile.svg';
 import {
   setCountryFilter,
@@ -19,25 +19,23 @@ import {
   setSearchKey,
   setUser,
 } from '../redux/DataSlice';
-import { routes } from '../constants/routes';
-import { SelectList } from 'react-native-dropdown-select-list';
+import {routes} from '../constants/routes';
+import {SelectList} from 'react-native-dropdown-select-list';
 
 const genderData = [
-  { key: '1', value: 'Female' },
-  { key: '2', value: 'Male' },
-  { key: '3', value: 'Others' },
+  {key: '1', value: 'Female'},
+  {key: '2', value: 'Male'},
 ];
 
-function Settings({ navigation }) {
-
-  const { CountryFilter, LanguageFilter, SearchKey, User } = useSelector(
+function Settings({navigation}) {
+  const {CountryFilter, LanguageFilter, SearchKey, User} = useSelector(
     state => state.data,
   );
   const scrollViewRef = useRef();
   const scrollToTop = () => {
     ToastAndroid.show('Login first to buy Premium ', ToastAndroid.SHORT);
     if (scrollViewRef.current) {
-      scrollViewRef.current.scrollTo({ y: 0, animated: true });
+      scrollViewRef.current.scrollTo({y: 0, animated: true});
     }
   };
 
@@ -89,8 +87,7 @@ function Settings({ navigation }) {
 
         setSlideAnim(new Animated.Value(0));
       }, 300);
-    }
-    else ToastAndroid.show('Upgrade to Premium First', ToastAndroid.SHORT)
+    } else ToastAndroid.show('Upgrade to Premium First', ToastAndroid.SHORT);
   };
 
   const slideFromLeft = slideAnim.interpolate({
@@ -102,8 +99,9 @@ function Settings({ navigation }) {
     outputRange: [30, 0],
   });
   const onTextPress = () => {
-    if (!User.isPremium) ToastAndroid.show('Upgrade to Premium First', ToastAndroid.SHORT);
-  }
+    if (!User.isPremium)
+      ToastAndroid.show('Upgrade to Premium First', ToastAndroid.SHORT);
+  };
 
   return (
     <ScrollView
@@ -111,23 +109,23 @@ function Settings({ navigation }) {
       showsHorizontalScrollIndicator={false}
       ref={scrollViewRef}
       contentContainerStyle={{
-        paddingBottom: 30
+        paddingBottom: 30,
       }}
       style={{
         height: '100%',
         backgroundColor: '#211F1F',
-        paddingHorizontal: 20
+        paddingHorizontal: 20,
       }}>
       <TouchableOpacity
         style={{
-          marginTop: 20
+          marginTop: 20,
         }}
         onPress={() => navigation.goBack()}>
         <Image
           source={require('../assets/images/back_icon.png')}
           style={{
             width: 90,
-            height: 20
+            height: 20,
           }}
         />
       </TouchableOpacity>
@@ -136,7 +134,7 @@ function Settings({ navigation }) {
           fontSize: 40,
           fontWeight: '700',
           color: 'white',
-          marginTop: 10
+          marginTop: 10,
         }}>
         Setting
       </Text>
@@ -165,7 +163,7 @@ function Settings({ navigation }) {
         <View
           style={{
             marginTop: 30,
-            width: '100%'
+            width: '100%',
           }}>
           <TextInput
             onChangeText={setValue}
@@ -186,8 +184,8 @@ function Settings({ navigation }) {
             setSelected={setGender}
             data={genderData}
             save="value"
-            dropdownStyles={{ backgroundColor: '#212B7F', borderWidth: 0 }}
-            dropdownTextStyles={{ color: 'white' }}
+            dropdownStyles={{backgroundColor: '#212B7F', borderWidth: 0}}
+            dropdownTextStyles={{color: 'white'}}
             search={false}
             maxHeight={120}
             boxStyles={{
@@ -203,7 +201,6 @@ function Settings({ navigation }) {
               color: 'white',
               fontSize: 20,
               margin: 0,
-
             }}
             placeholder={gender.length ? gender : 'Select Gender'}
           />
@@ -264,11 +261,11 @@ function Settings({ navigation }) {
               padding: 10,
               marginTop: 20,
             }}>
-            <Text style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>
+            <Text style={{color: 'white', fontSize: 20, fontWeight: 700}}>
               {`Your message ${User.isPremium ? '' : '(Premium feature)'}`}
             </Text>
             <TextInput
-              style={{ fontSize: 14 }}
+              style={{fontSize: 14}}
               placeholderTextColor={'white'}
               onPress={onTextPress}
               editable={User.isPremium}
@@ -287,7 +284,7 @@ function Settings({ navigation }) {
               padding: 10,
               marginTop: 20,
             }}>
-            <Text style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>
+            <Text style={{color: 'white', fontSize: 20, fontWeight: 700}}>
               Automatic Reconnect
             </Text>
             <View style={styles.outerBox}>
@@ -297,52 +294,69 @@ function Settings({ navigation }) {
                     styles.innerBox,
                     {
                       transform: [
-                        { translateX: left ? slideFromLeft : slideFromRight },
+                        {translateX: left ? slideFromLeft : slideFromRight},
                       ],
                     },
                   ]}>
-                  <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>{isOn ? 'ON' : 'OFF'}</Text>
+                  <Text
+                    style={{color: 'white', fontSize: 18, fontWeight: 'bold'}}>
+                    {isOn ? 'ON' : 'OFF'}
+                  </Text>
                 </Animated.View>
               </TouchableOpacity>
             </View>
           </View>
-          {
-            User.isPremium ? <></> :
-              <TouchableOpacity color='white' onPress={() => (User.Email && User.Email.length) ? navigation.navigate(routes.PAYMENT_PROCESSING) : scrollToTop()}>
-                <View
-                  style={{
-                    backgroundColor: '#051EFF',
-                    display: 'flex',
-                    justifyContent: 'flex-start',
-                    paddingHorizontal: 10,
-                    marginTop: 50,
-                    paddingVertical: 15,
-                  }}>
-                  <Text style={{ color: 'white', fontSize: 32, fontWeight: 900, lineHeight: 40 }}>
-                    {`Get pro and only\nconnect with\nfemales`}
-                  </Text>
-                  <View style={{
-                    marginTop: 30,
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                  }}>
-                    <Text style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>$20/Month</Text>
-                    <Image 
-                      source={require('../assets/images/back_icon.png')}
-                      style={{
-                        width: 90,
-                        height: 20,
-                        marginRight: 20
-                      }}
-                      transform={[{ rotate: '180deg' }]}
-                    />
-                  </View>
-                </View>
-              </TouchableOpacity>
-
-          }
+          <TouchableOpacity
+            color="white"
+            onPress={() =>
+              User.Email && User.Email.length
+                ? navigation.navigate(routes.PAYMENT_PROCESSING)
+                : scrollToTop()
+            }
+            disabled={User.isPremium}
+            >
+            <View
+              style={{
+                backgroundColor: '#051EFF',
+                display: 'flex',
+                justifyContent: 'flex-start',
+                paddingHorizontal: 10,
+                marginTop: 50,
+                paddingVertical: 15,
+              }}>
+              <Text
+                style={{
+                  color: 'white',
+                  fontSize: 32,
+                  fontWeight: 900,
+                  lineHeight: 40,
+                }}>
+                {`Get pro and only\nconnect with\nfemales`}
+              </Text>
+              <View
+                style={{
+                  marginTop: 30,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                }}>
+                <Text style={{color: 'white', fontSize: 20, fontWeight: 700}}>
+                  {User.isPremium ? 'Subscription active' : '$99/Month'}
+                </Text>
+                {!User.isPremium ? (
+                  <Image
+                    source={require('../assets/images/back_icon.png')}
+                    style={{
+                      width: 90,
+                      height: 20,
+                      marginRight: 20,
+                    }}
+                    transform={[{rotate: '180deg'}]}
+                  />
+                ) : null}
+              </View>
+            </View>
+          </TouchableOpacity>
         </View>
-
       </View>
     </ScrollView>
   );

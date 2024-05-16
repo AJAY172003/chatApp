@@ -14,7 +14,6 @@ import { StackActions } from '@react-navigation/native';
 const genderData = [
   { key: '1', value: 'Female' },
   { key: '2', value: 'Male' },
-  { key: '3', value: 'Others' },
 ];
 
 function FirstScreen({ navigation }) {
