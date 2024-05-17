@@ -1,4 +1,4 @@
-import {useRef} from 'react';
+import {useRef, useState} from 'react';
 import {
   Linking,
   PanResponder,
@@ -10,33 +10,44 @@ import {Animated} from 'react-native';
 
 export const DraggableMessageView = ({
   message,
+  draggedIndex,
   setDraggedIndex,
   index,
   showReplyToWindow,
   replyToMessage,
+  scrollToDirectedMessage,
+  highlightMessageIndex,
 }) => {
+  const shouldHandleReleaseRef = useRef(false);
+
   const pan = useRef(new Animated.ValueXY()).current;
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onPanResponderMove: (evt, gestureState) => {
-        setDraggedIndex(index);
-        // Only update pan.x if the gesture is moving to the right
         if (gestureState.dx > 50) {
+          shouldHandleReleaseRef.current = true;
+          // Only update pan.x if the gesture is moving to the right
+          setDraggedIndex(index);
           Animated.event(
             [null, {dx: pan.x, dy: pan.y}], // Update pan.x and pan.y with gesture
             {useNativeDriver: false},
           )(evt, gestureState);
+        } else {
+          shouldHandleReleaseRef.current = false;
         }
       },
       onPanResponderRelease: () => {
-        showReplyToWindow(index);
-        // Reset the position of the view to its initial state
-        Animated.timing(pan, {
-          toValue: {x: 0, y: 0},
-          duration: 0, // Set duration to 0 to make it immediate
-          useNativeDriver: false,
-        }).start();
+        if (shouldHandleReleaseRef.current) {
+          shouldHandleReleaseRef.current = false;
+          showReplyToWindow(index);
+          // Reset the position of the view to its initial state
+          Animated.timing(pan, {
+            toValue: {x: 0, y: 0},
+            duration: 0, // Set duration to 0 to make it immediate
+            useNativeDriver: false,
+          }).start();
+        }
       },
     }),
   ).current;
@@ -60,17 +71,17 @@ export const DraggableMessageView = ({
             key={index}
             style={{color: '#FF4949'}}
             onPress={() => Linking.openURL(url)}>
-            {part}
+            {part.trim()}
           </Text>
         );
       }
-      return <Text key={index}>{part}</Text>;
+      return <Text key={index}>{part.trim()}</Text>;
     });
   };
+
   return (
     <>
       <Animated.View
-        onTouchStart={() => setDraggedIndex(index)}
         style={[
           {
             transform: [{translateX: pan.x}],
@@ -80,64 +91,76 @@ export const DraggableMessageView = ({
         <View
           style={{
             flexDirection: 'row',
-            width: '100%',
             justifyContent: message.belongs_to ? 'flex-end' : 'flex-start',
+            backgroundColor:
+              highlightMessageIndex === index
+                ? 'rgba(255, 255, 255, 0.2)'
+                : 'transparent',
+            paddingLeft: message.belongs_to ? 70 : 10,
+            paddingRight: message.belongs_to ? 10 : 70,
           }}>
           <View
             style={{
               backgroundColor: message.belongs_to ? '#0066b2' : '#606060',
-              paddingVertical: 10,
-              paddingHorizontal: 10,
-              borderRadius: message.reply_msg_id !== null ? 20 : 30,
+              borderRadius: message.reply_msg_id !== null ? 15 : 20,
+              padding: 3,
               marginTop: 5,
               marginBottom: 10,
             }}>
             {message.reply_msg_id !== null ? (
-              <View
-                style={{
-                  backgroundColor: 'white',
-                  borderTopLeftRadius: 10,
-                  borderTopRightRadius: 10,
-                  width: '100%',
-                  padding: 5,
-                }}>
+              <TouchableOpacity
+                onPress={() =>
+                  scrollToDirectedMessage(replyToMessage?.messageId)
+                }
+                activeOpacity={0.8}>
                 <View
                   style={{
+                    backgroundColor: '#211F1F',
+                    borderTopLeftRadius: 12,
+                    borderTopRightRadius: 12,
+                    borderBottomLeftRadius: 5,
+                    borderBottomRightRadius: 5,
                     padding: 5,
-                    borderRadius: 10,
                   }}>
                   <View
                     style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
+                      borderRadius: 10,
                     }}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                      }}>
+                      <Text
+                        style={{
+                          color: '#0066b2',
+                          fontWeight: 500,
+                          fontSize: 12,
+                          paddingTop: 2,
+                        }}>
+                        {message.belongs_to ? 'You' : 'Stranger'}
+                      </Text>
+                    </View>
                     <Text
                       style={{
-                        color: '#0066b2',
-                        fontWeight: 500,
+                        color: 'white',
                         fontSize: 12,
-                        paddingTop: 2,
-                      }}>
-                      {message.belongs_to ? 'You' : 'Stranger'}
+                      }}
+                      numberOfLines={2}>
+                      {replyToMessage ? replyToMessage.text : ''}
                     </Text>
                   </View>
-                  <Text
-                    style={{
-                      color: 'grey',
-                      fontSize: 12,
-                    }}
-                    numberOfLines={2}>
-                    {replyToMessage ? replyToMessage.text : ''}
-                  </Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             ) : null}
             <Text
               style={{
                 color: 'white',
-                fontSize: 14,
-                paddingTop: message.reply_msg_id !== null ? 5 : 0,
-                flexWrap: 'wrap', // Allow text to wrap if it exceeds the available width
+                fontSize: 15,
+                flexWrap: 'wrap',
+                paddingHorizontal: 5,
+                paddingVertical: 5,
+                lineHeight: 20
               }}>
               {' '}
               {parseTextWithLinks(message.text)}

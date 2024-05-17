@@ -19,10 +19,19 @@ import {AccountHealth} from './src/screens/AccountHealth';
 import {AdManager} from 'react-native-admob-native-ads';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {StatusBar} from 'react-native';
+import {PermissionsAndroid} from 'react-native';
+import messaging from '@react-native-firebase/messaging';
 
 const Stack = createNativeStackNavigator();
 
 function App() {
+  PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+
+  // Register background handler
+  messaging().setBackgroundMessageHandler(async remoteMessage => {
+    console.log('Message handled in the background!', remoteMessage);
+  });
+
   AdManager.setRequestConfiguration({
     testDeviceIds: ['YOUR_TEST_DEVICE_ID'],
     maxAdContetRating: 'MA',
@@ -31,7 +40,6 @@ function App() {
   }).then(() => {
     console.log('Request configuration set');
   });
-
   return (
     <SafeAreaView style={{flex: 1}}>
       <StatusBar animated={true} backgroundColor="#211F1F" />

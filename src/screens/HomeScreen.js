@@ -35,8 +35,9 @@ export const HomeScreen = ({navigation}) => {
     const channelA = supaClient.channel('server-msgs');
 
     channelA
-      .on('broadcast', {event: 'online'}, payload =>
-        dispatch(setNumUserOnline(payload.payload?.numOnlineUsers)),
+      .on('broadcast', {event: 'onlineU'}, payload => {
+        dispatch(setNumUserOnline(payload.payload?.numOnlineUsers));
+      }
       )
       .subscribe();
 

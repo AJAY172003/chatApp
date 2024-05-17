@@ -34,6 +34,7 @@ function ChatScreen({chatTab, userId, isLocked}) {
   const [noMatchFound, setNoMatchFound] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [replyToIndex, setReplyToIndex] = useState(null);
+  const [highlightMessageIndex, setHighlightMessageIndex] = useState(7);
 
   const {ChatData, User, LastFIOffset, RequiredFilters, IP} = useSelector(
     state => state.data,
@@ -134,12 +135,19 @@ function ChatScreen({chatTab, userId, isLocked}) {
         message: message,
         messageId: randomId,
         created_at: new Date(),
-        reply_msg_id: replyToIndex !== null ? messages[replyToIndex]?.messageId : null,
+        reply_msg_id:
+          replyToIndex !== null ? messages[replyToIndex]?.messageId : null,
       });
 
       setMessages(prevMessages => [
         ...prevMessages,
-        {text: message, belongs_to: true, messageId: randomId, reply_msg_id: replyToIndex !== null ? messages[replyToIndex]?.messageId : null},
+        {
+          text: message,
+          belongs_to: true,
+          messageId: randomId,
+          reply_msg_id:
+            replyToIndex !== null ? messages[replyToIndex]?.messageId : null,
+        },
       ]);
       dispatch(
         setChatData({
@@ -148,7 +156,15 @@ function ChatScreen({chatTab, userId, isLocked}) {
             ...latestChatData[chatTab],
             messages: [
               ...latestChatData[chatTab].messages,
-              {text: message, belongs_to: true, messageId: randomId, reply_msg_id: replyToIndex !== null ? messages[replyToIndex]?.messageId : null},
+              {
+                text: message,
+                belongs_to: true,
+                messageId: randomId,
+                reply_msg_id:
+                  replyToIndex !== null
+                    ? messages[replyToIndex]?.messageId
+                    : null,
+              },
             ],
             unseenMessages: 0,
           },
@@ -164,7 +180,9 @@ function ChatScreen({chatTab, userId, isLocked}) {
   useEffect(() => {
     // Automatically scroll to the end when messages change
     if (messages.length > 0 && flatListRef.current) {
-      flatListRef.current.scrollToEnd({animated: true});
+      setTimeout(() => {
+        flatListRef.current.scrollToEnd({animated: true});
+      }, 20);
     }
   }, [messages]);
 
@@ -220,17 +238,28 @@ function ChatScreen({chatTab, userId, isLocked}) {
 
   const showReplyToWindow = index => {
     setReplyToIndex(index);
-    console.log('Reply to index: ', index);
     setDraggedIndex(null);
   };
+
+  const scrollToDirectedMessage = messageId => {
+    const index = messages.findIndex(msg => msg.messageId === messageId);
+    if (index !== -1) {
+      setHighlightMessageIndex(index);
+      flatListRef.current.scrollToIndex({index: index, animated: true});
+      const interval = setInterval(() => {
+        setHighlightMessageIndex(null);
+        clearInterval(interval);
+      }, 5000);
+    }
+  };
+
   return (
     <View
       style={{
         flex: 1,
-        justifyContent: 'space-around',
+        justifyContent: 'space-between',
         backgroundColor: '#211F1F',
         flexDirection: 'column',
-        paddingHorizontal: 20
       }}>
       {isRequesting ? (
         <View>
@@ -253,7 +282,7 @@ function ChatScreen({chatTab, userId, isLocked}) {
                 }, 0);
               }}
               style={{
-                height: '90%',
+                height: '93%',
               }}>
               <View
                 style={{
@@ -278,16 +307,21 @@ function ChatScreen({chatTab, userId, isLocked}) {
                 showsHorizontalScrollIndicator={false}
                 ref={flatListRef}
                 initialNumToRender={messages.length || 1}
-                style={{backgroundColor: '#211F1F', marginBottom: 10}}
+                style={{backgroundColor: '#211F1F', marginBottom: 20, paddingBottom: 20}}
                 data={messages}
                 renderItem={({item, index}) => (
                   <DraggableMessageView
                     key={index}
                     message={item}
+                    draggedIndex={draggedIndex}
                     setDraggedIndex={setDraggedIndex}
                     index={index}
                     showReplyToWindow={showReplyToWindow}
-                    replyToMessage={messages.find( msg => msg.messageId === item.reply_msg_id)}
+                    replyToMessage={messages.find(
+                      msg => msg.messageId === item.reply_msg_id,
+                    )}
+                    scrollToDirectedMessage={scrollToDirectedMessage}
+                    highlightMessageIndex={highlightMessageIndex}
                   />
                 )}
               />
@@ -298,6 +332,7 @@ function ChatScreen({chatTab, userId, isLocked}) {
                 flex: 1,
                 justifyContent: 'flex-end',
                 paddingBottom: 40,
+                paddingHorizontal: 20,
               }}>
               {<AdView media={true} />}
               <View>
@@ -333,132 +368,138 @@ function ChatScreen({chatTab, userId, isLocked}) {
           {!isDisconnected && !noMatchFound ? (
             <View
               style={{
-                flexDirection: 'row',
-                gap: 10,
-                marginBottom: 10
+                marginBottom: 10,
               }}>
               <View
                 style={{
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
+                  flexDirection: 'row',
+                  gap: 10,
+                  position: 'absolute',
+                  bottom: 0,
+                  paddingHorizontal: 10,
                 }}>
-                <TouchableOpacity
-                  onPress={handleSkip}
+                <View
                   style={{
-                    backgroundColor: 'white',
-                    borderRadius: 20,
-                    paddingVertical: 12,
-                    height: 50,
-                    width: 70,
+                    flexDirection: 'column',
+                    justifyContent: 'flex-end',
                   }}>
-                  <Text
-                    style={{
-                      color: 'black',
-                      fontWeight: 'bold',
-                      alignSelf: 'center',
-                      fontSize: 18,
-                    }}>
-                    SKIP
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View
-                style={{
-                  alignItems: 'center',
-                  borderRadius: 50,
-                  flex: 1,
-                }}>
-                {replyToIndex !== null ? (
-                  <View
+                  <TouchableOpacity
+                    onPress={handleSkip}
                     style={{
                       backgroundColor: 'white',
-                      borderTopLeftRadius: 10,
-                      borderTopRightRadius: 10,
-                      width: '100%',
-                      padding: 5,
+                      borderRadius: 20,
+                      paddingVertical: 12,
+                      height: 50,
+                      width: 70,
                     }}>
+                    <Text
+                      style={{
+                        color: 'black',
+                        fontWeight: 'bold',
+                        alignSelf: 'center',
+                        fontSize: 18,
+                      }}>
+                      SKIP
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <View
+                  style={{
+                    alignItems: 'center',
+                    borderRadius: 50,
+                    flex: 1,
+                  }}>
+                  {replyToIndex !== null ? (
                     <View
                       style={{
-                        backgroundColor: 'rgba(0,0,0,0.1)',
+                        backgroundColor: 'white',
+                        borderTopLeftRadius: 10,
+                        borderTopRightRadius: 10,
+                        width: '100%',
                         padding: 5,
-                        borderRadius: 10,
                       }}>
                       <View
                         style={{
-                          flexDirection: 'row',
-                          justifyContent: 'space-between',
+                          backgroundColor: 'rgba(0,0,0,0.1)',
+                          padding: 5,
+                          borderRadius: 10,
                         }}>
-                        <Text
+                        <View
                           style={{
-                            color: '#0066b2',
-                            fontWeight: 500,
-                            fontSize: 12,
-                            paddingTop: 2
-                          }}
-                        >
-                          {messages[replyToIndex].belongs_to
-                            ? 'You'
-                            : 'Stranger'}
-                        </Text>
-                        <TouchableOpacity
-                          onPress={() => setReplyToIndex(null)}
-                          style={{
-                            paddingVertical: 2,
-                            paddingHorizontal: 10
-                          }}
-                        >
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                          }}>
                           <Text
                             style={{
-                              color: 'grey',
-                              fontWeight: 500
-                            }}
-                          >X</Text>
-                        </TouchableOpacity>
+                              color: '#0066b2',
+                              fontWeight: 500,
+                              fontSize: 12,
+                              paddingTop: 2,
+                            }}>
+                            {messages[replyToIndex].belongs_to
+                              ? 'You'
+                              : 'Stranger'}
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => setReplyToIndex(null)}
+                            style={{
+                              paddingVertical: 2,
+                              paddingHorizontal: 10,
+                            }}>
+                            <Text
+                              style={{
+                                color: 'grey',
+                                fontWeight: 500,
+                              }}>
+                              X
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                        <Text
+                          style={{
+                            color: 'grey',
+                            fontSize: 12,
+                          }}
+                          numberOfLines={2}>
+                          {replyToIndex !== null
+                            ? messages[replyToIndex].text
+                            : ''}
+                        </Text>
                       </View>
-                      <Text
-                        style={{
-                          color: 'grey',
-                          fontSize: 12,
-                        }}
-                        numberOfLines={2}>
-                        {replyToIndex !== null
-                          ? messages[replyToIndex].text
-                          : ''}
-                      </Text>
                     </View>
-                  </View>
-                ) : null}
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 10,
-                    backgroundColor: 'white',
-                    borderTopLeftRadius: replyToIndex !== null ? 0 : 50,
-                    borderTopRightRadius: replyToIndex !== null ? 0 : 50,
-                    borderBottomLeftRadius: replyToIndex !== null ? 20 : 50,
-                    borderBottomRightRadius: replyToIndex !== null ? 20 : 50,
-                    width: '100%',
-                    minHeight: 50,
-                  }}>
+                  ) : null}
                   <View
                     style={{
-                      height: '100%',
-                      width: '80%',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 10,
+                      backgroundColor: 'white',
+                      borderTopLeftRadius: replyToIndex !== null ? 0 : 30,
+                      borderTopRightRadius: replyToIndex !== null ? 0 : 30,
+                      borderBottomLeftRadius: replyToIndex !== null ? 20 : 30,
+                      borderBottomRightRadius: replyToIndex !== null ? 20 : 30,
+                      width: '100%',
+                      minHeight: 50,
                     }}>
-                    <TextInput
-                      placeholderTextColor="grey"
-                      placeholder="Type your message here..."
-                      style={{flex: 1, color: 'black', width: '100%'}}
-                      value={messageText}
-                      onChangeText={setMessageText}
-                      multiline={true}
-                    />
+                    <View
+                      style={{
+                        height: '100%',
+                        width: '80%',
+                      }}>
+                      <TextInput
+                        placeholderTextColor="grey"
+                        placeholder="Type your message here..."
+                        style={{flex: 1, color: 'black', width: '100%', maxHeight: 100}}
+                        value={messageText}
+                        onChangeText={setMessageText}
+                        multiline={true}
+                      />
+                    </View>
+                    <TouchableOpacity onPress={() => sendMessage(messageText)}>
+                      <Send />
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity onPress={() => sendMessage(messageText)}>
-                    <Send />
-                  </TouchableOpacity>
                 </View>
               </View>
             </View>
@@ -466,6 +507,7 @@ function ChatScreen({chatTab, userId, isLocked}) {
             <View
               style={{
                 flexDirection: 'row',
+                paddingHorizontal: 20,
               }}>
               <Text
                 style={{

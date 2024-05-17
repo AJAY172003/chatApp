@@ -323,7 +323,7 @@ export const ChatManager = ({navigation, route}) => {
         }}>
         <ScrollView
           style={{
-            maxHeight: 80,
+            maxHeight: 70,
           }}
           contentContainerStyle={{
             flexDirection: 'row',
