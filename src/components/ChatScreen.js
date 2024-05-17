@@ -54,6 +54,7 @@ function ChatScreen({chatTab, userId, isLocked}) {
   const [noMatchFound, setNoMatchFound] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [replyToIndex, setReplyToIndex] = useState(null);
+  const [highlightMessageIndex, setHighlightMessageIndex] = useState(7);
   const[isTyping, setIsTyping] = useState(false);
   const {ChatData, User, LastFIOffset, RequiredFilters, IP} = useSelector(
     state => state.data,
@@ -182,12 +183,19 @@ function ChatScreen({chatTab, userId, isLocked}) {
         message: message,
         messageId: randomId,
         created_at: new Date(),
-        reply_msg_id: replyToIndex !== null ? messages[replyToIndex]?.messageId : null,
+        reply_msg_id:
+          replyToIndex !== null ? messages[replyToIndex]?.messageId : null,
       });
 
       setMessages(prevMessages => [
         ...prevMessages,
-        {text: message, belongs_to: true, messageId: randomId, reply_msg_id: replyToIndex !== null ? messages[replyToIndex]?.messageId : null},
+        {
+          text: message,
+          belongs_to: true,
+          messageId: randomId,
+          reply_msg_id:
+            replyToIndex !== null ? messages[replyToIndex]?.messageId : null,
+        },
       ]);
       dispatch(
         setChatData({
@@ -196,7 +204,15 @@ function ChatScreen({chatTab, userId, isLocked}) {
             ...latestChatData[chatTab],
             messages: [
               ...latestChatData[chatTab].messages,
-              {text: message, belongs_to: true, messageId: randomId, reply_msg_id: replyToIndex !== null ? messages[replyToIndex]?.messageId : null},
+              {
+                text: message,
+                belongs_to: true,
+                messageId: randomId,
+                reply_msg_id:
+                  replyToIndex !== null
+                    ? messages[replyToIndex]?.messageId
+                    : null,
+              },
             ],
             unseenMessages: 0,
           },
@@ -212,7 +228,9 @@ function ChatScreen({chatTab, userId, isLocked}) {
   useEffect(() => {
     // Automatically scroll to the end when messages change
     if (messages.length > 0 && flatListRef.current) {
-      flatListRef.current.scrollToEnd({animated: true});
+      setTimeout(() => {
+        flatListRef.current.scrollToEnd({animated: true});
+      }, 20);
     }
   }, [messages]);
 
@@ -268,17 +286,28 @@ function ChatScreen({chatTab, userId, isLocked}) {
 
   const showReplyToWindow = index => {
     setReplyToIndex(index);
-    console.log('Reply to index: ', index);
     setDraggedIndex(null);
   };
+
+  const scrollToDirectedMessage = messageId => {
+    const index = messages.findIndex(msg => msg.messageId === messageId);
+    if (index !== -1) {
+      setHighlightMessageIndex(index);
+      flatListRef.current.scrollToIndex({index: index, animated: true});
+      const interval = setInterval(() => {
+        setHighlightMessageIndex(null);
+        clearInterval(interval);
+      }, 5000);
+    }
+  };
+
   return (
     <View
       style={{
         flex: 1,
-        justifyContent: 'space-around',
+        justifyContent: 'space-between',
         backgroundColor: '#211F1F',
         flexDirection: 'column',
-        paddingHorizontal: 20
       }}>
       {isRequesting ? (
         <View>
@@ -301,7 +330,7 @@ function ChatScreen({chatTab, userId, isLocked}) {
                 }, 0);
               }}
               style={{
-                height: '90%',
+                height: '93%',
               }}>
               <View
                 style={{
@@ -326,16 +355,21 @@ function ChatScreen({chatTab, userId, isLocked}) {
                 showsHorizontalScrollIndicator={false}
                 ref={flatListRef}
                 initialNumToRender={messages.length || 1}
-                style={{backgroundColor: '#211F1F', marginBottom: 10}}
+                style={{backgroundColor: '#211F1F', marginBottom: 20, paddingBottom: 20}}
                 data={messages}
                 renderItem={({item, index}) => (
                   <DraggableMessageView
                     key={index}
                     message={item}
+                    draggedIndex={draggedIndex}
                     setDraggedIndex={setDraggedIndex}
                     index={index}
                     showReplyToWindow={showReplyToWindow}
-                    replyToMessage={messages.find( msg => msg.messageId === item.reply_msg_id)}
+                    replyToMessage={messages.find(
+                      msg => msg.messageId === item.reply_msg_id,
+                    )}
+                    scrollToDirectedMessage={scrollToDirectedMessage}
+                    highlightMessageIndex={highlightMessageIndex}
                   />
                 )}
               />
@@ -350,6 +384,7 @@ function ChatScreen({chatTab, userId, isLocked}) {
                 flex: 1,
                 justifyContent: 'flex-end',
                 paddingBottom: 40,
+                paddingHorizontal: 20,
               }}>
               {<AdView media={true} />}
               <View>
@@ -501,17 +536,14 @@ function ChatScreen({chatTab, userId, isLocked}) {
                     }}>
                     <TextInput
                       placeholderTextColor="grey"
-                      
                       placeholder="Type your message here..."
-                      style={{flex: 1, color: 'black', width: '100%',paddingLeft:12}}
+                      style={{flex: 1, color: 'black', width: '100%'}}
                       value={messageText}
-                      onChangeText={ (value)=>{
-                        setMessageText(value)
-                        } }
+                      onChangeText={setMessageText}
                       multiline={true}
                     />
                   </View>
-                  <TouchableOpacity style={{paddingRight:20}} onPress={() => sendMessage(messageText)}>
+                  <TouchableOpacity onPress={() => sendMessage(messageText)}>
                     <Send />
                   </TouchableOpacity>
                 </View>
@@ -521,6 +553,7 @@ function ChatScreen({chatTab, userId, isLocked}) {
             <View
               style={{
                 flexDirection: 'row',
+                paddingHorizontal: 20,
               }}>
               <Text
                 style={{
