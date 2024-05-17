@@ -1,5 +1,5 @@
-const currentMatchingSystem = 'dev';
-const currentPaymentSystem = 'dev';
+const currentMatchingSystem = 'prod';
+const currentPaymentSystem = 'prod';
 import axios from 'axios';
 
 const baseMatchingUrls = {

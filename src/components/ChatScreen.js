@@ -20,28 +20,76 @@ import {AdView} from '../screens/AdView';
 import {insertMessage} from '../utils/SupaClient';
 import {sendChatRequest, skipChat} from '../utils/api';
 import {DraggableMessageView} from './DraggableMessageView';
+import { supaClient } from '../utils/SupaClient';
 
 const FEMALE = 'Female';
+//function for debounce
 
+const useDebouncedValue = (inputValue, delay) => {
+
+  const [debouncedValue, setDebouncedValue] = useState(inputValue);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(inputValue);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [inputValue, delay]);
+
+  return debouncedValue;
+};
 function ChatScreen({chatTab, userId, isLocked}) {
+  
   const [messages, setMessages] = useState([]);
   const [receiverId, setReceiverId] = useState(null);
   const [receiverData, setReceiverData] = useState(null);
   const [messageText, setMessageText] = useState('');
+  const debouncedSearchTerm = useDebouncedValue(messageText, 300);
   const [isRequesting, setIsRequesting] = useState(false);
   const [isDisconnected, setIsDisconnected] = useState(false);
   const [initialOpening, setInitialOpening] = useState(true);
   const [noMatchFound, setNoMatchFound] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [replyToIndex, setReplyToIndex] = useState(null);
-
+  const[isTyping, setIsTyping] = useState(false);
   const {ChatData, User, LastFIOffset, RequiredFilters, IP} = useSelector(
     state => state.data,
   );
   const chatDataRef = useRef(null);
-
   const dispatch = useDispatch();
+  const channelA = supaClient.channel('server-msgs');
+  useEffect(() => {
+    console.log("debouncedSearchTerm")
+    // API call or other actions to be performed with debounced value
+    channelA.send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: {receiverId:receiverId,userId:userId },
+    });
+  }, [debouncedSearchTerm]);
 
+  useEffect(() => {
+    channelA
+      .on('broadcast', {event: 'typing'}, payload =>
+  {
+    // console.log("received payload ",payload)
+    if(payload.payload.receiverId ==userId && payload.payload.userId ==receiverId)
+    {
+      setIsTyping(true);
+      setTimeout(() => {
+        setIsTyping(false);
+      }, 1000);
+    }
+  }
+      )
+      .subscribe();
+      return () => {
+        channelA.unsubscribe();
+      };
+  }, [receiverId,userId]);
   const handleChatRequest = async () => {
     console.log('Requesting chat for tab: ', chatTab);
     setIsDisconnected(false);
@@ -291,6 +339,10 @@ function ChatScreen({chatTab, userId, isLocked}) {
                   />
                 )}
               />
+              {
+                isTyping?
+              <Text style={{color:'white',fontSize:15,marginBottom:20}}>Stranger is Typing....</Text>:<></>
+              }
             </View>
           ) : (
             <View
@@ -449,14 +501,17 @@ function ChatScreen({chatTab, userId, isLocked}) {
                     }}>
                     <TextInput
                       placeholderTextColor="grey"
+                      
                       placeholder="Type your message here..."
-                      style={{flex: 1, color: 'black', width: '100%'}}
+                      style={{flex: 1, color: 'black', width: '100%',paddingLeft:12}}
                       value={messageText}
-                      onChangeText={setMessageText}
+                      onChangeText={ (value)=>{
+                        setMessageText(value)
+                        } }
                       multiline={true}
                     />
                   </View>
-                  <TouchableOpacity onPress={() => sendMessage(messageText)}>
+                  <TouchableOpacity style={{paddingRight:20}} onPress={() => sendMessage(messageText)}>
                     <Send />
                   </TouchableOpacity>
                 </View>
