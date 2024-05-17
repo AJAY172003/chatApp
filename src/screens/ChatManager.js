@@ -76,6 +76,7 @@ export const ChatManager = ({navigation, route}) => {
               text: payload.new.message,
               belongs_to: false,
               messageId: payload.new.messageId,
+              reply_msg_id: payload.new.reply_msg_id,
             },
           ],
           unseenMessages:
@@ -288,7 +289,7 @@ export const ChatManager = ({navigation, route}) => {
         await reportUser({
           userId: userId,
           receiverId: ChatData[CurrentChatTab].receiverId,
-          reason: reason,
+          reason: reason
         });
         skipChat({userId, receiverId: ChatData[CurrentChatTab].receiverId});
         ToastAndroid.show('Stranger has been reported', ToastAndroid.SHORT);

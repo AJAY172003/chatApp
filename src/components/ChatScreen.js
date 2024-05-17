@@ -1,9 +1,11 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   Image,
   Linking,
+  PanResponder,
   TextInput,
   ToastAndroid,
   TouchableOpacity,
@@ -17,10 +19,11 @@ import {setChatData, setLastFIOffset} from '../redux/DataSlice';
 import {AdView} from '../screens/AdView';
 import {insertMessage} from '../utils/SupaClient';
 import {sendChatRequest, skipChat} from '../utils/api';
+import {DraggableMessageView} from './DraggableMessageView';
 
 const FEMALE = 'Female';
 
-function ChatScreen({ chatTab, userId, isLocked}) {
+function ChatScreen({chatTab, userId, isLocked}) {
   const [messages, setMessages] = useState([]);
   const [receiverId, setReceiverId] = useState(null);
   const [receiverData, setReceiverData] = useState(null);
@@ -29,15 +32,18 @@ function ChatScreen({ chatTab, userId, isLocked}) {
   const [isDisconnected, setIsDisconnected] = useState(false);
   const [initialOpening, setInitialOpening] = useState(true);
   const [noMatchFound, setNoMatchFound] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [replyToIndex, setReplyToIndex] = useState(null);
 
-  const {ChatData, User, LastFIOffset, RequiredFilters, IP} =
-    useSelector(state => state.data);
+  const {ChatData, User, LastFIOffset, RequiredFilters, IP} = useSelector(
+    state => state.data,
+  );
   const chatDataRef = useRef(null);
 
   const dispatch = useDispatch();
 
   const handleChatRequest = async () => {
-    console.log("Requesting chat for tab: ", chatTab)
+    console.log('Requesting chat for tab: ', chatTab);
     setIsDisconnected(false);
     setNoMatchFound(false);
     try {
@@ -114,6 +120,8 @@ function ChatScreen({ chatTab, userId, isLocked}) {
   }, [ChatData]);
 
   const sendMessage = async message => {
+    setDraggedIndex(null);
+    setReplyToIndex(null);
     while (isLocked);
     const randomId = uuid.v4();
     if (!message.trim()) return;
@@ -126,11 +134,12 @@ function ChatScreen({ chatTab, userId, isLocked}) {
         message: message,
         messageId: randomId,
         created_at: new Date(),
+        reply_msg_id: replyToIndex !== null ? messages[replyToIndex]?.messageId : null,
       });
 
       setMessages(prevMessages => [
         ...prevMessages,
-        {text: message, belongs_to: true, messageId: randomId},
+        {text: message, belongs_to: true, messageId: randomId, reply_msg_id: replyToIndex !== null ? messages[replyToIndex]?.messageId : null},
       ]);
       dispatch(
         setChatData({
@@ -139,7 +148,7 @@ function ChatScreen({ chatTab, userId, isLocked}) {
             ...latestChatData[chatTab],
             messages: [
               ...latestChatData[chatTab].messages,
-              {text: message, belongs_to: true, messageId: randomId},
+              {text: message, belongs_to: true, messageId: randomId, reply_msg_id: replyToIndex !== null ? messages[replyToIndex]?.messageId : null},
             ],
             unseenMessages: 0,
           },
@@ -159,35 +168,8 @@ function ChatScreen({ chatTab, userId, isLocked}) {
     }
   }, [messages]);
 
-  // method to parse the text passed and idintifying the links in it and then returning the text component with the links
-  const parseTextWithLinks = text => {
-    // Regular expression to split text by URLs
-    const parts = text.split(
-      /\b(https?:\/\/\S+|www\.\S+\.\S+|\S+\.\S+\/\S+|\S+\.\S+)/,
-    );
-    return parts.map((part, index) => {
-      if (
-        part.match(/\b(https?:\/\/\S+|www\.\S+\.\S+|\S+\.\S+\/\S+|\S+\.\S+)/)
-      ) {
-        const url =
-          part.startsWith('http') || part.startsWith('www')
-            ? part
-            : 'http://' + part; // Append http:// to URLs missing a protocol or www.
-        return (
-          <Text
-            key={index}
-            style={{color: '#FF4949'}}
-            onPress={() => Linking.openURL(url)}>
-            {part}
-          </Text>
-        );
-      }
-      return <Text key={index}>{part}</Text>;
-    });
-  };
-
   const handleSkip = async () => {
-    await skipChat( {
+    await skipChat({
       userId: userId,
       receiverId: receiverId,
     });
@@ -235,6 +217,12 @@ function ChatScreen({ chatTab, userId, isLocked}) {
     }
     return '';
   };
+
+  const showReplyToWindow = index => {
+    setReplyToIndex(index);
+    console.log('Reply to index: ', index);
+    setDraggedIndex(null);
+  };
   return (
     <View
       style={{
@@ -242,8 +230,7 @@ function ChatScreen({ chatTab, userId, isLocked}) {
         justifyContent: 'space-around',
         backgroundColor: '#211F1F',
         flexDirection: 'column',
-        paddingBottom: 10,
-        paddingHorizontal: 20,
+        paddingHorizontal: 20
       }}>
       {isRequesting ? (
         <View>
@@ -260,11 +247,11 @@ function ChatScreen({ chatTab, userId, isLocked}) {
         <>
           {!isDisconnected && !noMatchFound ? (
             <View
-           onLayout={() => {
-            setTimeout(() => {
-              flatListRef.current.scrollToEnd({animated: true})
-            }, 0);
-          }}
+              onLayout={() => {
+                setTimeout(() => {
+                  flatListRef.current.scrollToEnd({animated: true});
+                }, 0);
+              }}
               style={{
                 height: '90%',
               }}>
@@ -287,7 +274,6 @@ function ChatScreen({ chatTab, userId, isLocked}) {
               </View>
 
               <FlatList
-            
                 showsVerticalScrollIndicator={false}
                 showsHorizontalScrollIndicator={false}
                 ref={flatListRef}
@@ -295,59 +281,14 @@ function ChatScreen({ chatTab, userId, isLocked}) {
                 style={{backgroundColor: '#211F1F', marginBottom: 10}}
                 data={messages}
                 renderItem={({item, index}) => (
-                  <>
-                    {item.belongs_to ? (
-                      <View
-                        key={index}
-                        style={{
-                          flexDirection: 'row',
-                          width: '100%',
-                          justifyContent: 'flex-end',
-                        }}>
-                        <Text
-                          style={{
-                            color: 'white',
-                            fontSize: 14,
-                            flexWrap: 'wrap', // Allow text to wrap if it exceeds the available width
-                            backgroundColor: '#0066b2',
-                            paddingVertical: 10,
-                            paddingHorizontal: 15,
-                            borderRadius: 30,
-                            marginTop: 5,
-                            marginBottom: 10,
-                          }}>
-                          {' '}
-                          {parseTextWithLinks(item.text)}
-                        </Text>
-                      </View>
-                    ) : (
-                      <View
-                        key={index}
-                        style={{
-                          flexDirection: 'row',
-                          width: '100%',
-                          justifyContent: 'flex-start',
-                        }}>
-                        <Text
-                          style={{
-                            color: 'white',
-                            fontSize: 14,
-                            flexWrap: 'wrap', // Allow text to wrap if it exceeds the available width
-                            backgroundColor: '#606060',
-                            paddingVertical: 10,
-                            paddingHorizontal: 15,
-                            borderRadius: 30,
-                            marginRight: '20%',
-                            marginLeft: 10,
-                            marginTop: 5,
-                            marginBottom: 10,
-                          }}>
-                          {' '}
-                          {parseTextWithLinks(item.text)}
-                        </Text>
-                      </View>
-                    )}
-                  </>
+                  <DraggableMessageView
+                    key={index}
+                    message={item}
+                    setDraggedIndex={setDraggedIndex}
+                    index={index}
+                    showReplyToWindow={showReplyToWindow}
+                    replyToMessage={messages.find( msg => msg.messageId === item.reply_msg_id)}
+                  />
                 )}
               />
             </View>
@@ -394,42 +335,111 @@ function ChatScreen({ chatTab, userId, isLocked}) {
               style={{
                 flexDirection: 'row',
                 gap: 10,
+                marginBottom: 10
               }}>
-              <TouchableOpacity
-                onPress={handleSkip}
-                style={{
-                  backgroundColor: 'white',
-                  borderRadius: 20,
-                  paddingVertical: 12,
-                  height: 50,
-                  width: 70,
-                }}>
-                <Text
-                  style={{
-                    color: 'black',
-                    fontWeight: 'bold',
-                    alignSelf: 'center',
-                    fontSize: 18,
-                  }}>
-                  SKIP
-                </Text>
-              </TouchableOpacity>
               <View
                 style={{
-                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-end',
+                }}>
+                <TouchableOpacity
+                  onPress={handleSkip}
+                  style={{
+                    backgroundColor: 'white',
+                    borderRadius: 20,
+                    paddingVertical: 12,
+                    height: 50,
+                    width: 70,
+                  }}>
+                  <Text
+                    style={{
+                      color: 'black',
+                      fontWeight: 'bold',
+                      alignSelf: 'center',
+                      fontSize: 18,
+                    }}>
+                    SKIP
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View
+                style={{
                   alignItems: 'center',
                   borderRadius: 50,
                   flex: 1,
                 }}>
+                {replyToIndex !== null ? (
+                  <View
+                    style={{
+                      backgroundColor: 'white',
+                      borderTopLeftRadius: 10,
+                      borderTopRightRadius: 10,
+                      width: '100%',
+                      padding: 5,
+                    }}>
+                    <View
+                      style={{
+                        backgroundColor: 'rgba(0,0,0,0.1)',
+                        padding: 5,
+                        borderRadius: 10,
+                      }}>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
+                        }}>
+                        <Text
+                          style={{
+                            color: '#0066b2',
+                            fontWeight: 500,
+                            fontSize: 12,
+                            paddingTop: 2
+                          }}
+                        >
+                          {messages[replyToIndex].belongs_to
+                            ? 'You'
+                            : 'Stranger'}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => setReplyToIndex(null)}
+                          style={{
+                            paddingVertical: 2,
+                            paddingHorizontal: 10
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: 'grey',
+                              fontWeight: 500
+                            }}
+                          >X</Text>
+                        </TouchableOpacity>
+                      </View>
+                      <Text
+                        style={{
+                          color: 'grey',
+                          fontSize: 12,
+                        }}
+                        numberOfLines={2}>
+                        {replyToIndex !== null
+                          ? messages[replyToIndex].text
+                          : ''}
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
                 <View
                   style={{
-                    display: 'flex',
                     flexDirection: 'row',
                     alignItems: 'center',
-                    backgroundColor: 'white',
-                    borderRadius: 50,
-                    width: '100%',
                     justifyContent: 'center',
+                    gap: 10,
+                    backgroundColor: 'white',
+                    borderTopLeftRadius: replyToIndex !== null ? 0 : 50,
+                    borderTopRightRadius: replyToIndex !== null ? 0 : 50,
+                    borderBottomLeftRadius: replyToIndex !== null ? 20 : 50,
+                    borderBottomRightRadius: replyToIndex !== null ? 20 : 50,
+                    width: '100%',
                     minHeight: 50,
                   }}>
                   <View

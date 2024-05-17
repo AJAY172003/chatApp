@@ -11,12 +11,14 @@ import {
   setChatData,
   setCurrentChatTab,
   setInfoPopupSeen,
+  setNumUserOnline,
   setRequiredFilters,
 } from '../redux/DataSlice';
 import {useDispatch, useSelector} from 'react-redux';
 import uuid from 'react-native-uuid';
 import {useEffect, useState} from 'react';
 import {BlockedScreen} from '../components/BlockedScreen';
+import {supaClient} from '../utils/SupaClient';
 
 export const HomeScreen = ({navigation}) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -30,6 +32,17 @@ export const HomeScreen = ({navigation}) => {
     if (InfoPopupSeen == false) {
       openModal();
     }
+    const channelA = supaClient.channel('server-msgs');
+
+    channelA
+      .on('broadcast', {event: 'online'}, payload =>
+        dispatch(setNumUserOnline(payload.payload?.numOnlineUsers)),
+      )
+      .subscribe();
+
+    return () => {
+      channelA.unsubscribe();
+    };
   }, []);
 
   const openModal = () => {
