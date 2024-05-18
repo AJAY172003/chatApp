@@ -95,6 +95,7 @@ export const CountryChat = ({ navigation }) => {
                                     <>
                                         <Text
                                             style={{
+                                                color:'#DFDFDF',
                                                 textAlign: 'center',
                                                 marginTop: 20
                                             }}

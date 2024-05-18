@@ -20,14 +20,34 @@ import {AdView} from '../screens/AdView';
 import {insertMessage} from '../utils/SupaClient';
 import {sendChatRequest, skipChat} from '../utils/api';
 import {DraggableMessageView} from './DraggableMessageView';
+import { supaClient } from '../utils/SupaClient';
 
 const FEMALE = 'Female';
+//function for debounce
 
+const useDebouncedValue = (inputValue, delay) => {
+
+  const [debouncedValue, setDebouncedValue] = useState(inputValue);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(inputValue);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [inputValue, delay]);
+
+  return debouncedValue;
+};
 function ChatScreen({chatTab, userId, isLocked}) {
+  
   const [messages, setMessages] = useState([]);
   const [receiverId, setReceiverId] = useState(null);
   const [receiverData, setReceiverData] = useState(null);
   const [messageText, setMessageText] = useState('');
+  const debouncedSearchTerm = useDebouncedValue(messageText, 300);
   const [isRequesting, setIsRequesting] = useState(false);
   const [isDisconnected, setIsDisconnected] = useState(false);
   const [initialOpening, setInitialOpening] = useState(true);
@@ -35,14 +55,42 @@ function ChatScreen({chatTab, userId, isLocked}) {
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [replyToIndex, setReplyToIndex] = useState(null);
   const [highlightMessageIndex, setHighlightMessageIndex] = useState(7);
-
+  const[isTyping, setIsTyping] = useState(false);
   const {ChatData, User, LastFIOffset, RequiredFilters, IP} = useSelector(
     state => state.data,
   );
   const chatDataRef = useRef(null);
-
   const dispatch = useDispatch();
+  const channelA = supaClient.channel('server-msgs');
+  useEffect(() => {
+    console.log("debouncedSearchTerm")
+    // API call or other actions to be performed with debounced value
+    channelA.send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: {receiverId:receiverId,userId:userId },
+    });
+  }, [debouncedSearchTerm]);
 
+  useEffect(() => {
+    channelA
+      .on('broadcast', {event: 'typing'}, payload =>
+  {
+    // console.log("received payload ",payload)
+    if(payload.payload.receiverId ==userId && payload.payload.userId ==receiverId)
+    {
+      setIsTyping(true);
+      setTimeout(() => {
+        setIsTyping(false);
+      }, 1000);
+    }
+  }
+      )
+      .subscribe();
+      return () => {
+        channelA.unsubscribe();
+      };
+  }, [receiverId,userId]);
   const handleChatRequest = async () => {
     console.log('Requesting chat for tab: ', chatTab);
     setIsDisconnected(false);
@@ -325,6 +373,10 @@ function ChatScreen({chatTab, userId, isLocked}) {
                   />
                 )}
               />
+              {
+                isTyping?
+              <Text style={{color:'white',fontSize:15,marginBottom:20}}>Stranger is Typing....</Text>:<></>
+              }
             </View>
           ) : (
             <View
@@ -368,138 +420,132 @@ function ChatScreen({chatTab, userId, isLocked}) {
           {!isDisconnected && !noMatchFound ? (
             <View
               style={{
-                marginBottom: 10,
+                flexDirection: 'row',
+                gap: 10,
+                marginBottom: 10
               }}>
               <View
                 style={{
-                  flexDirection: 'row',
-                  gap: 10,
-                  position: 'absolute',
-                  bottom: 0,
-                  paddingHorizontal: 10,
+                  flexDirection: 'column',
+                  justifyContent: 'flex-end',
                 }}>
-                <View
+                <TouchableOpacity
+                  onPress={handleSkip}
                   style={{
-                    flexDirection: 'column',
-                    justifyContent: 'flex-end',
+                    backgroundColor: 'white',
+                    borderRadius: 20,
+                    paddingVertical: 12,
+                    height: 50,
+                    width: 70,
                   }}>
-                  <TouchableOpacity
-                    onPress={handleSkip}
+                  <Text
+                    style={{
+                      color: 'black',
+                      fontWeight: 'bold',
+                      alignSelf: 'center',
+                      fontSize: 18,
+                    }}>
+                    SKIP
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View
+                style={{
+                  alignItems: 'center',
+                  borderRadius: 50,
+                  flex: 1,
+                }}>
+                {replyToIndex !== null ? (
+                  <View
                     style={{
                       backgroundColor: 'white',
-                      borderRadius: 20,
-                      paddingVertical: 12,
-                      height: 50,
-                      width: 70,
+                      borderTopLeftRadius: 10,
+                      borderTopRightRadius: 10,
+                      width: '100%',
+                      padding: 5,
                     }}>
-                    <Text
-                      style={{
-                        color: 'black',
-                        fontWeight: 'bold',
-                        alignSelf: 'center',
-                        fontSize: 18,
-                      }}>
-                      SKIP
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <View
-                  style={{
-                    alignItems: 'center',
-                    borderRadius: 50,
-                    flex: 1,
-                  }}>
-                  {replyToIndex !== null ? (
                     <View
                       style={{
-                        backgroundColor: 'white',
-                        borderTopLeftRadius: 10,
-                        borderTopRightRadius: 10,
-                        width: '100%',
+                        backgroundColor: 'rgba(0,0,0,0.1)',
                         padding: 5,
+                        borderRadius: 10,
                       }}>
                       <View
                         style={{
-                          backgroundColor: 'rgba(0,0,0,0.1)',
-                          padding: 5,
-                          borderRadius: 10,
+                          flexDirection: 'row',
+                          justifyContent: 'space-between',
                         }}>
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            justifyContent: 'space-between',
-                          }}>
-                          <Text
-                            style={{
-                              color: '#0066b2',
-                              fontWeight: 500,
-                              fontSize: 12,
-                              paddingTop: 2,
-                            }}>
-                            {messages[replyToIndex].belongs_to
-                              ? 'You'
-                              : 'Stranger'}
-                          </Text>
-                          <TouchableOpacity
-                            onPress={() => setReplyToIndex(null)}
-                            style={{
-                              paddingVertical: 2,
-                              paddingHorizontal: 10,
-                            }}>
-                            <Text
-                              style={{
-                                color: 'grey',
-                                fontWeight: 500,
-                              }}>
-                              X
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
                         <Text
                           style={{
-                            color: 'grey',
+                            color: '#0066b2',
+                            fontWeight: 500,
                             fontSize: 12,
+                            paddingTop: 2
                           }}
-                          numberOfLines={2}>
-                          {replyToIndex !== null
-                            ? messages[replyToIndex].text
-                            : ''}
+                        >
+                          {messages[replyToIndex].belongs_to
+                            ? 'You'
+                            : 'Stranger'}
                         </Text>
+                        <TouchableOpacity
+                          onPress={() => setReplyToIndex(null)}
+                          style={{
+                            paddingVertical: 2,
+                            paddingHorizontal: 10
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: 'grey',
+                              fontWeight: 500
+                            }}
+                          >X</Text>
+                        </TouchableOpacity>
                       </View>
+                      <Text
+                        style={{
+                          color: 'grey',
+                          fontSize: 12,
+                        }}
+                        numberOfLines={2}>
+                        {replyToIndex !== null
+                          ? messages[replyToIndex].text
+                          : ''}
+                      </Text>
                     </View>
-                  ) : null}
+                  </View>
+                ) : null}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                    backgroundColor: 'white',
+                    borderTopLeftRadius: replyToIndex !== null ? 0 : 50,
+                    borderTopRightRadius: replyToIndex !== null ? 0 : 50,
+                    borderBottomLeftRadius: replyToIndex !== null ? 20 : 50,
+                    borderBottomRightRadius: replyToIndex !== null ? 20 : 50,
+                    width: '100%',
+                    minHeight: 50,
+                  }}>
                   <View
                     style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 10,
-                      backgroundColor: 'white',
-                      borderTopLeftRadius: replyToIndex !== null ? 0 : 30,
-                      borderTopRightRadius: replyToIndex !== null ? 0 : 30,
-                      borderBottomLeftRadius: replyToIndex !== null ? 20 : 30,
-                      borderBottomRightRadius: replyToIndex !== null ? 20 : 30,
-                      width: '100%',
-                      minHeight: 50,
+                      height: '100%',
+                      width: '80%',
                     }}>
-                    <View
-                      style={{
-                        height: '100%',
-                        width: '80%',
-                      }}>
-                      <TextInput
-                        placeholderTextColor="grey"
-                        placeholder="Type your message here..."
-                        style={{flex: 1, color: 'black', width: '100%', maxHeight: 100}}
-                        value={messageText}
-                        onChangeText={setMessageText}
-                        multiline={true}
-                      />
-                    </View>
-                    <TouchableOpacity onPress={() => sendMessage(messageText)}>
-                      <Send />
-                    </TouchableOpacity>
+                    <TextInput
+                      placeholderTextColor="grey"
+                      placeholder="Type your message here..."
+                      style={{flex: 1, color: 'black', width: '100%'}}
+                      value={messageText}
+                      onChangeText={setMessageText}
+                      multiline={true}
+                    />
                   </View>
+                  <TouchableOpacity onPress={() => sendMessage(messageText)}>
+                    <Send />
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>
