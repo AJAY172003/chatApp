@@ -14,13 +14,32 @@ import {
   setNumUserOnline,
   setRequiredFilters,
 } from '../redux/DataSlice';
+import {useFocusEffect} from '@react-navigation/native';
 import {useDispatch, useSelector} from 'react-redux';
 import uuid from 'react-native-uuid';
-import {useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {BlockedScreen} from '../components/BlockedScreen';
 import {supaClient} from '../utils/SupaClient';
-
+import appsFlyer from 'react-native-appsflyer';
 export const HomeScreen = ({navigation}) => {
+  appsFlyer.initSdk(
+    {
+      devKey: 'bMqCKui6dFrYiwP4mePF3Q',
+      isDebug: false,
+      appId: 'app.lit',
+      onInstallConversionDataListener: false, //Optional
+      onDeepLinkListener: true, //Optional
+      timeToWaitForATTUserAuthorization: 10, //for iOS 14.5
+      manualStart: true, //Optional
+    },
+    (res) => {
+      console.log( "response",res);
+    },
+    (err) => {
+      console.error(err);
+    }
+  );
+  appsFlyer.startSdk();
   const [modalVisible, setModalVisible] = useState(false);
 
   const dispatch = useDispatch();
@@ -28,22 +47,27 @@ export const HomeScreen = ({navigation}) => {
     state => state.data,
   );
 
+  useFocusEffect(
+    React.useCallback(() => {
+      const channelA = supaClient.channel('server-msgs');
+      setTimeout(() => {
+        channelA
+          .on('broadcast', {event: 'onlineU'}, payload => {
+            dispatch(setNumUserOnline(payload.payload?.numOnlineUsers));
+          })
+          .subscribe();
+      }, 0);
+
+      return () => {
+        console.log('unsubscribed......');
+        channelA.unsubscribe();
+      };
+    }, []),
+  );
   useEffect(() => {
     if (InfoPopupSeen == false) {
       openModal();
     }
-    const channelA = supaClient.channel('server-msgs');
-
-    channelA
-      .on('broadcast', {event: 'onlineU'}, payload => {
-        dispatch(setNumUserOnline(payload.payload?.numOnlineUsers));
-      }
-      )
-      .subscribe();
-
-    return () => {
-      channelA.unsubscribe();
-    };
   }, []);
 
   const openModal = () => {
@@ -77,12 +101,16 @@ export const HomeScreen = ({navigation}) => {
               justifyContent: 'space-between',
               marginTop: 25,
             }}>
+              <View style={{alignItems:'flex-end',justifyContent:'flex-end',flexDirection:'row'}}>
             <Text
               style={{
                 color: 'white',
                 fontSize: 40,
                 marginTop: 15,
                 fontWeight: 'bold',
+                alignItems:'center',
+                justifyContent:'center',
+                alignSelf:'center'
               }}>
               {`${numberWithCommas(NumUserOnline)}`}
               <Text
@@ -91,9 +119,23 @@ export const HomeScreen = ({navigation}) => {
                   fontSize: 25,
                   fontWeight: 'bold',
                 }}>
-                {`\nPEOPLE ONLINE`}
+                {`\nPEOPLE ONLINE` }
+
               </Text>
+
             </Text>
+            <Image
+                source={require('../assets/images/online.png')}
+                style={{
+                  marginBottom:10,
+                  marginLeft: 7,
+                  height: 11,
+                  width: 11,
+                  resizeMode: 'contain',
+          
+                }}
+              />
+            </View>
             <TouchableOpacity
               onPress={() => navigation.navigate(routes.SETTINGS)}>
               <Image
@@ -119,6 +161,7 @@ export const HomeScreen = ({navigation}) => {
                     messages: [],
                     unseenMessages: 0,
                     requestId: uuid.v4(),
+                    typing: false
                   },
                 }),
               );

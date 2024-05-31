@@ -8,10 +8,16 @@ import {
   TouchableOpacity,
   View,
   AppState,
+  Button,
 } from 'react-native';
 import uuid from 'react-native-uuid';
 import {useDispatch, useSelector} from 'react-redux';
-import {setChatData, setCurrentChatTab, setIsBlocked, setisTabSwitched} from '../redux/DataSlice';
+import {
+  setChatData,
+  setCurrentChatTab,
+  setIsBlocked,
+  setisTabSwitched,
+} from '../redux/DataSlice';
 import {useEffect, useRef, useState} from 'react';
 import ChatScreen from '../components/ChatScreen';
 import {ConfirmationPopup} from '../components/ConfirmationPopup';
@@ -29,11 +35,12 @@ export const ChatManager = ({navigation, route}) => {
     useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-
+  const [modalChatDeleteVisible, setModalChatDeleteVisible] = useState(false);
   const {userId = uuid.v4()} = route.params;
   const dispatch = useDispatch();
   const chatDataRef = useRef(null);
   const {ChatData, CurrentChatTab, IP} = useSelector(state => state.data);
+  const [deleteKey, setDeleteKey] = useState(null);
 
   const openModal = () => {
     setModalVisible(true);
@@ -47,10 +54,19 @@ export const ChatManager = ({navigation, route}) => {
     chatDataRef.current = ChatData;
   }, [ChatData]);
 
+  //Hnadle delete chat tab
+  const onYes = () => {
+    setModalChatDeleteVisible(false);
+    handleDeleteChatTab(deleteKey);
+  };
+
+  const onNo = () => {
+    setModalChatDeleteVisible(false);
+  };
+
   // Create a function to handle inserts
   const handleInserts = payload => {
     setIsLocked(true);
-
     const latestChatData = chatDataRef.current;
     console.log('Change received!', payload);
     console.log('chatData: ', latestChatData);
@@ -104,8 +120,7 @@ export const ChatManager = ({navigation, route}) => {
       );
 
       if (chatTabKey !== undefined) {
-
-        if(chatTabKey == CurrentChatTab) {
+        if (chatTabKey == CurrentChatTab) {
           setModalVisible(false);
         }
         let tempChatData = {...latestChatData};
@@ -116,6 +131,7 @@ export const ChatManager = ({navigation, route}) => {
           messages: [],
           unseenMessages: 0,
           requestId: uuid.v4(),
+          typing: false
         };
 
         dispatch(setChatData(tempChatData));
@@ -172,7 +188,10 @@ export const ChatManager = ({navigation, route}) => {
         type: 'broadcast',
         event: 'heartbeat',
         payload: {userId: userId},
-      });
+      }).then(() => {
+        // console.log('Heartbeat sent');
+      }
+      );
     });
   };
 
@@ -210,7 +229,12 @@ export const ChatManager = ({navigation, route}) => {
         )
         .on(
           'postgres_changes',
-          {event: 'INSERT', schema: 'public', table: 'blocked', filter: `ip=eq.${IP}`},
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'blocked',
+            filter: `ip=eq.${IP}`,
+          },
           handleBlocked,
         )
         .subscribe();
@@ -219,6 +243,41 @@ export const ChatManager = ({navigation, route}) => {
       interval = setInterval(() => {
         pingServer();
       }, HEARTBEAT_TIMER);
+
+      // listen to typing event
+      supaClient.channel('typing-event')
+          .on('broadcast', {event: 'typing'}, payload => {
+            // console.log("typig has been done")
+            const receiverId = payload.payload.receiverId;
+            const senderId = payload.payload.userId;
+            const latestChatData = chatDataRef.current;
+
+            // find the chat tab from ChatData where userId is receiverId and senderId is receiverId
+            // if found, set isTyping to true and after 1 second set it to false
+            const chatTabKey = Object.keys(latestChatData).find(
+              key =>
+                userId == receiverId &&
+                latestChatData[key].receiverId == senderId,
+            );
+            if (chatTabKey !== undefined) {
+              let tempChatData = {...latestChatData};
+              tempChatData[chatTabKey] = {
+                ...tempChatData[chatTabKey],
+                typing: true,
+              };
+              dispatch(setChatData(tempChatData));
+              setTimeout(() => {
+                const latestChatData = chatDataRef.current;
+                let tempChatData = {...latestChatData};
+                tempChatData[chatTabKey] = {
+                  ...tempChatData[chatTabKey],
+                  typing: false,
+                };
+                dispatch(setChatData(tempChatData));
+              }, 1000);
+            }
+          })
+          .subscribe();
     }
 
     const backHandler = BackHandler.addEventListener(
@@ -250,12 +309,14 @@ export const ChatManager = ({navigation, route}) => {
       let newChatTab =
         Math.max(...Object.keys(ChatData).map(key => parseInt(key))) + 1;
 
-      let tempChatData = {...ChatData};
+      const latestChatData = chatDataRef.current;
+      let tempChatData = {...latestChatData};
       tempChatData[newChatTab] = {
         messages: [],
         receiverId: null,
         unseenMessages: 0,
         requestId: uuid.v4(),
+        typing: false
       };
       dispatch(setChatData(tempChatData));
       dispatch(setCurrentChatTab(newChatTab));
@@ -263,7 +324,8 @@ export const ChatManager = ({navigation, route}) => {
   };
 
   const handleDeleteChatTab = chatTabToDelete => {
-    let tempChatData = {...ChatData};
+    const latestChatData = chatDataRef.current;
+    let tempChatData = {...latestChatData};
     if (tempChatData[chatTabToDelete].receiverId !== null) {
       skipChat({userId, receiverId: tempChatData[chatTabToDelete].receiverId});
     } else {
@@ -274,8 +336,8 @@ export const ChatManager = ({navigation, route}) => {
       });
     }
 
-    chatDataRef.current = tempChatData;
     delete tempChatData[chatTabToDelete];
+    console.log(tempChatData)
     dispatch(setChatData(tempChatData));
     if (CurrentChatTab == chatTabToDelete) {
       dispatch(setCurrentChatTab(Object.keys(tempChatData)[0]));
@@ -289,7 +351,7 @@ export const ChatManager = ({navigation, route}) => {
         await reportUser({
           userId: userId,
           receiverId: ChatData[CurrentChatTab].receiverId,
-          reason: reason
+          reason: reason,
         });
         skipChat({userId, receiverId: ChatData[CurrentChatTab].receiverId});
         ToastAndroid.show('Stranger has been reported', ToastAndroid.SHORT);
@@ -356,8 +418,7 @@ export const ChatManager = ({navigation, route}) => {
                     height: 40,
                     flexDirection: 'row',
                     justifyContent: 'space-between',
-                    borderTopLeftRadius: 10,
-                    borderTopRightRadius: 10,
+
                     rowGap: 10,
                   }}>
                   <TouchableOpacity
@@ -382,7 +443,15 @@ export const ChatManager = ({navigation, route}) => {
                     </Text>
                   </TouchableOpacity>
                   {Object.keys(ChatData).length > 1 && (
-                    <TouchableOpacity onPress={() => handleDeleteChatTab(key)}>
+                    <TouchableOpacity
+                      style={{
+                        justifyContent: 'center',
+                        flexDirection: 'column',
+                      }}
+                      onPress={() => {
+                        setDeleteKey(key);
+                        setModalChatDeleteVisible(true);
+                      }}>
                       <Image
                         style={{
                           width: 24,
@@ -397,8 +466,52 @@ export const ChatManager = ({navigation, route}) => {
               );
             })}
           </View>
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalChatDeleteVisible}>
+            <View
+              style={{
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginTop: 22,
+              }}>
+              <View
+                style={{
+                  backgroundColor: '#343434',
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: 'white',
+                  padding: 25,
+                  alignItems: 'center',
+                  shadowColor: 'white',
+                  width: 270,
+                  elevation: 3,
+                }}>
+                <Text
+                  style={{
+                    marginBottom: 18,
+                    textAlign: 'center',
+                    color: 'white',
 
-          <TouchableOpacity onPress={handleAddChatTab} style={{}}>
+                    fontWeight: '500',
+                  }}>
+                  Do you want to close this tab?
+                </Text>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                  }}>
+                  <Button color={'#051EFF'} title="No" onPress={onNo} />
+                  <Button color={'#051EFF'} title="Yes" onPress={onYes} />
+                </View>
+              </View>
+            </View>
+          </Modal>
+          <TouchableOpacity onPress={handleAddChatTab}>
             <Image
               style={{
                 width: 36,
@@ -433,7 +546,7 @@ export const ChatManager = ({navigation, route}) => {
               backgroundColor: 'black',
               flexDirection: 'column',
             }}
-            key={index}>
+            key={key}>
             <ChatScreen chatTab={key} userId={userId} isLocked={isLocked} />
           </View>
         );
@@ -473,10 +586,10 @@ export const ChatManager = ({navigation, route}) => {
                 width: 260,
                 resizeMode: 'cover',
                 borderTopLeftRadius: 23.5,
-                borderTopRightRadius: 23.5
+                borderTopRightRadius: 23.5,
               }}
             />
-             <TouchableOpacity
+            <TouchableOpacity
               onPress={closeModal}
               style={{
                 position: 'absolute',

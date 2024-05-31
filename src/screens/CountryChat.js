@@ -129,7 +129,8 @@ export const CountryChat = ({ navigation }) => {
                                                                         receiverId: null,
                                                                         messages: [],
                                                                         unseenMessages: 0,
-                                                                        requestId: uuid.v4()
+                                                                        requestId: uuid.v4(),
+                                                                        typing: false
                                                                     }
                                                                 }));
                                                                 dispatch(setRequiredFilters({
@@ -199,7 +200,8 @@ export const CountryChat = ({ navigation }) => {
                                                             receiverId: null,
                                                             messages: [],
                                                             unseenMessages: 0,
-                                                            requestId: uuid.v4()
+                                                            requestId: uuid.v4(),
+                                                            typing: false
                                                         }
                                                     }));
                                                     dispatch(setRequiredFilters({

@@ -1,8 +1,11 @@
+import Clipboard from '@react-native-clipboard/clipboard';
 import {useRef, useState} from 'react';
 import {
+  Alert,
   Linking,
   PanResponder,
   Text,
+  ToastAndroid,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -101,11 +104,10 @@ export const DraggableMessageView = ({
           }}>
           <View
             style={{
-              backgroundColor: message.belongs_to ? '#0066b2' : '#606060',
+              backgroundColor: message.belongs_to ? '#051EFF' : '#606060',
               borderRadius: message.reply_msg_id !== null ? 15 : 20,
               padding: 3,
-              marginTop: 5,
-              marginBottom: 10,
+              marginBottom: 8,
             }}>
             {message.reply_msg_id !== null ? (
               <TouchableOpacity
@@ -153,6 +155,12 @@ export const DraggableMessageView = ({
                 </View>
               </TouchableOpacity>
             ) : null}
+            <TouchableOpacity onLongPress={() => {
+              Clipboard.setString(message.text)
+             ToastAndroid.show('Copied to clipboard', ToastAndroid.SHORT)
+            }} 
+              activeOpacity={0.8 }
+              >
             <Text
               style={{
                 color: 'white',
@@ -162,9 +170,11 @@ export const DraggableMessageView = ({
                 paddingVertical: 5,
                 lineHeight: 20
               }}>
+
               {' '}
               {parseTextWithLinks(message.text)}
             </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Animated.View>

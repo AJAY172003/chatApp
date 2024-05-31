@@ -117,7 +117,8 @@ export const ChatRoom = ({ route, navigation }) => {
                                                             receiverId: null,
                                                             messages: [],
                                                             unseenMessages: 0,
-                                                            requestId: uuid.v4()
+                                                            requestId: uuid.v4(),
+                                                            typing: false
                                                         }
                                                     }));
                                                     dispatch(setRequiredFilters({

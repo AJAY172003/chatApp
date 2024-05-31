@@ -1,6 +1,7 @@
 package app.lit
-
+import android.os.Bundle;
 import com.facebook.react.ReactActivity
+import com.swmansion.rnscreens.Screen;
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
@@ -12,6 +13,9 @@ class MainActivity : ReactActivity() {
    * rendering of the component.
    */
   override fun getMainComponentName(): String = "Lit"
+      override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(null) // Pass 'null' to prevent state restoration
+    }
 
   /**
    * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]

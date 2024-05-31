@@ -5,6 +5,7 @@ export const routes = {
     CHATMANAGER: 'ChatManager',
     CHATSCREEN: 'ChatScreen',
     HOMESCREEN: 'HomeScreen',
+    ADS: 'Ads',
     APP: 'App',
     PAYMENT_PROCESSING: 'PaymentProcessing',
     ADMOB: 'Admob',

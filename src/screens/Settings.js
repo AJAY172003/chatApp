@@ -324,15 +324,27 @@ function Settings({navigation}) {
                 marginTop: 50,
                 paddingVertical: 15,
               }}>
+                <Text style={{color:'white',fontWeight:700,fontSize:24}}>
+                Subscription
+                </Text>
               <Text
                 style={{
                   color: 'white',
                   fontSize: 32,
                   fontWeight: 900,
                   lineHeight: 40,
+                  marginTop:20
                 }}>
                 {`Get pro and only\nconnect with\nfemales`}
               </Text>
+             <View style={{marginTop:20,marginBottom:10}}>
+              <Text style={{fontWeight:700,color:'white',fontSize:24}}>Benefits</Text>
+              <View style={{justifyContent:'space-around',height:100}}>
+              <Text style={{color:'white',fontSize:15,fontWeight:700}}>1. Only connect with female strangers</Text>
+              <Text style={{color:'white',fontSize:15,fontWeight:700}}>2. Automatic reconnect with new strangers</Text>
+              <Text style={{color:'white',fontSize:15,fontWeight:700}}>3. Automatic first message to strangers</Text>
+             </View>
+             </View>
               <View
                 style={{
                   marginTop: 30,
@@ -354,6 +366,9 @@ function Settings({navigation}) {
                   />
                 ) : null}
               </View>
+              <View style={{alignItems:'center',marginTop:30}}>
+            <Text style={{alignItems:'flex-start',fontSize:12,color:'white'}}>If you don’t cancel the product with an automatic renewal subscription, the paid regular payment will be automatically renewed every month. if you don’t want to make a paid regular payment, you can cancel the subscription at any time on the google play store. For more information on how to cancel the subscription, please refer to the frequently ask questions on google.</Text>
+            </View>
             </View>
           </TouchableOpacity>
         </View>

@@ -1,3 +1,6 @@
-export const GOOGLE_SIGIN_WEB_CLIENT_ID = '410497703187-15ht0kt2skbhku7eb88macklfi7f7msj.apps.googleusercontent.com';
-export const SUPABASE_URL = 'https://ninflipyamhqwcrfymmu.supabase.co'
-export const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pbmZsaXB5YW1ocXdjcmZ5bW11Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQ1NTcwOTYsImV4cCI6MjAzMDEzMzA5Nn0.FBRmz0HOlsMUkMXzQiZTXxyLruKqygXjw17g0QuHhPU'
+export const GOOGLE_SIGIN_WEB_CLIENT_ID = '410497703187-15ht0kt2skbhku7eb88macklfi7f7msj.apps.googleusercontent.com'
+export const SUPABASE_URL = 'https://inwrzejrwqsbajgvbonz.supabase.co'
+export const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlud3J6ZWpyd3FzYmFqZ3Zib256Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTYzNTkwOTQsImV4cCI6MjAzMTkzNTA5NH0.Pf8AJ5SBR5NJjnlllAZ5OlDw1AyfvLfC7R6WqvcMqT8'
+
+// export const SUPABASE_URL = 'https://news180.com'
+// export const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE'
